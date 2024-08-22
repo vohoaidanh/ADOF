@@ -129,6 +129,7 @@ Modify the dataroot in test.py.
 ```sh
 CUDA_VISIBLE_DEVICES=0 ./pytorch18/bin/python test.py --model_path ./weights/ADOF_model_epoch_9.pth  --batch_size {BS}
 ```
+Alternatively, you can use the Jupyter notebook train_notebook.ipynb for both training and evaluation. This notebook provides an interactive environment to run the training process and evaluate the model results.
 
 ## Detection Results
 
