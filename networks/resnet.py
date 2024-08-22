@@ -1,11 +1,12 @@
+import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152']
+
+__all__ = ['ResNet', 'resnet50']
 
 
 model_urls = {
@@ -15,6 +16,33 @@ model_urls = {
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
+
+def ADOF(input_tensor):
+    device = input_tensor.device
+    batch_size, channels, height, width = input_tensor.size()
+
+    # Define the gradient filters for x and y directions
+    kernel_x = torch.tensor([[0, 0, 0], [0, -1, 1], [0, 0, 0]], dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+    kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
+
+    # Expand the kernels to match the number of input channels
+    kernel_x = kernel_x.expand(channels, 1, 3, 3)
+    kernel_y = kernel_y.expand(channels, 1, 3, 3)
+
+    # Apply the filters
+    diff_x = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels) + 1e-9 # to avoid div 0
+    diff_y = F.conv2d(input_tensor, kernel_y, padding=1, groups=channels)
+    
+    diff = diff_y/diff_x
+    
+    # Set the gradient values to 0.0 for cases where dy/dx is greater than 100, which approximates gradients close to +/- π/2
+    # The threshold of 100 is a reference value and can be tuned for optimal performance during actual training.
+    diff = torch.where(torch.abs(diff) > 1e2, torch.tensor(0.0), diff)
+    
+    # Compute the arctangent of the difference and normalize it to the range [0, 1]
+    output = (torch.arctan(diff) / (torch.pi / 2) + 1.0) / 2.0
+  
+    return output
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -107,6 +135,7 @@ class ResNet(nn.Module):
         self.unfoldIndex = 0
         assert self.unfoldSize > 1
         assert -1 < self.unfoldIndex and self.unfoldIndex < self.unfoldSize*self.unfoldSize
+        self.adof = ADOF
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -150,22 +179,11 @@ class ResNet(nn.Module):
             layers.append(block(self.inplanes, planes))
 
         return nn.Sequential(*layers)
-    def interpolate(self, img, factor):
-        return F.interpolate(F.interpolate(img, scale_factor=factor, mode='nearest', recompute_scale_factor=True), scale_factor=1/factor, mode='nearest', recompute_scale_factor=True)
+ 
     def forward(self, x):
-        # n,c,w,h = x.shape
-        # if -1*w%2 != 0: x = x[:,:,:w%2*-1,:      ]
-        # if -1*h%2 != 0: x = x[:,:,:      ,:h%2*-1]
-        # factor = 0.5
-        # x_half = F.interpolate(x, scale_factor=factor, mode='nearest', recompute_scale_factor=True)
-        # x_re   = F.interpolate(x_half, scale_factor=1/factor, mode='nearest', recompute_scale_factor=True)
-        # NPR  = x - x_re
-        # n,c,w,h = x.shape
-        # if w%2 == 1 : x = x[:,:,:-1,:]
-        # if h%2 == 1 : x = x[:,:,:,:-1]
-        NPR  = x - self.interpolate(x, 0.5)
-
-        x = self.conv1(NPR*2.0/3.0)
+        
+        x = self.adof(x)
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
@@ -180,28 +198,6 @@ class ResNet(nn.Module):
         return x
 
 
-def resnet18(pretrained=False, **kwargs):
-    """Constructs a ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
-    return model
-
-
-def resnet34(pretrained=False, **kwargs):
-    """Constructs a ResNet-34 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
-    return model
-
-
 def resnet50(pretrained=False, **kwargs):
     """Constructs a ResNet-50 model.
     Args:
@@ -212,24 +208,3 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
-
-def resnet101(pretrained=False, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
-    return model
-
-
-def resnet152(pretrained=False, **kwargs):
-    """Constructs a ResNet-152 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
-    return model

@@ -27,7 +27,19 @@ def seed_torch(seed=1029):
     torch.backends.cudnn.enabled = False
 
 
-# test config
+# test config 
+#Training folder struct (The name of the folder can be changed)
+#ForenSynths_train_val/
+#│
+#├── train/
+#│   └── [...]
+#│
+#├── val/
+#│   └── [...]
+#│
+#└── test/
+#    └── [...]
+
 vals = ['progan', 'stylegan', 'stylegan2', 'biggan', 'cyclegan', 'stargan', 'gaugan', 'deepfake']
 multiclass = [1, 1, 1, 0, 1, 0, 0, 0]
 
@@ -67,12 +79,14 @@ if __name__ == '__main__':
             Testopt.classes = os.listdir(Testopt.dataroot) if multiclass[v_id] else ['']
             Testopt.no_resize = False
             Testopt.no_crop = True
-            acc, ap, _, _, _, _ = validate(model.model, Testopt)
+            acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
             accs.append(acc);aps.append(ap)
-            print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id, val, acc*100, ap*100))
+            print("({} {:12}) acc: {:.1f}; ap: {:.1f}; r_acc: {:.1f}; f_acc: {:.1f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
         print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
-    # model.eval();testmodel();
+    # Run for the first time to test the code for any errors
+    model.eval();testmodel();
+
     model.train()
     print(f'cwd: {os.getcwd()}')
     for epoch in range(opt.niter):
@@ -98,14 +112,15 @@ if __name__ == '__main__':
             
 
         # Validation
+        model.save_networks(f'{epoch}')
         model.eval()
         acc, ap = validate(model.model, val_opt)[:2]
         val_writer.add_scalar('accuracy', acc, model.total_steps)
         val_writer.add_scalar('ap', ap, model.total_steps)
         print("(Val @ epoch {}) acc: {}; ap: {}".format(epoch, acc, ap))
-        # testmodel()
+        testmodel()
         model.train()
 
-    model.eval();testmodel()
+    #model.eval();testmodel()
     model.save_networks('last')
     
