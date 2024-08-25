@@ -197,14 +197,54 @@ class ResNet(nn.Module):
 
         return x
 
+class Resnet_Mask(nn.Module):
+    def __init__(self, augment_prob=0.0,**kwargs):
+        super(Resnet_Mask,self).__init__()
+        self.augment_prob = augment_prob
+        self.resnet = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    
+    def forward(self,x):
+        
+        if self.training and (torch.rand(1)<self.augment_prob):
+            input_tensor = x.clone().detach().requires_grad_()
+            output_A = self.resnet(input_tensor)
+            loss = output_A.sum(dim=1) 
+            loss.backward(torch.ones_like(loss))
+            gradients = input_tensor.grad
+            mask = (F.relu(gradients) > 0).float()
+            if torch.rand(1)<0.5:
+                mask = 1-mask
+
+            x = x*mask
+        return self.resnet(x)
 
 def resnet50(pretrained=False, **kwargs):
     """Constructs a ResNet-50 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    #model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = Resnet_Mask(augment_prob=0.2)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
+if __name__ == '__main__':
+    model = resnet50()
+    model.eval()
+    x = torch.rand(1,3,224,224)
+    model.eval()
+    model(x)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
