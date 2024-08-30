@@ -4,7 +4,9 @@ import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
-from random import random, choice
+import random
+
+from random import choice
 from io import BytesIO
 from PIL import Image
 from PIL import ImageFile
@@ -173,11 +175,11 @@ class FileNameDataset(datasets.ImageFolder):
 def data_augment(img, opt):
     img = np.array(img)
 
-    if random() < opt.blur_prob:
+    if random.random() < opt.blur_prob:
         sig = sample_continuous(opt.blur_sig)
         gaussian_blur(img, sig)
 
-    if random() < opt.jpg_prob:
+    if random.random() < opt.jpg_prob:
         method = sample_discrete(opt.jpg_method)
         qual = sample_discrete(opt.jpg_qual)
         img = jpeg_from_key(img, qual, method)
