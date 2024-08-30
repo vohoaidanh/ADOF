@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
@@ -15,8 +16,11 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 def dataset_folder(opt, root):
     if opt.mode == 'binary':
         return binary_dataset(opt, root)
-    if opt.mode == 'filename':
+    elif opt.mode == 'filename':
         return FileNameDataset(opt, root)
+    elif opt.mode == 'augmentation':
+        return augmentation_dataset(opt, root)
+        
     raise ValueError('opt.mode needs to be binary or filename.')
 
 
@@ -50,6 +54,107 @@ def binary_dataset(opt, root):
             ]))
     return dset
 
+class RandomMask(object):
+    def __init__(self, ratio=0.5, patch_size=16, p=0.5):
+        """
+        Args:
+            ratio (float or tuple of float): If float, the ratio of the image to be masked.
+                                             If tuple of float, random sample ratio between the two values.
+            patch_size (int): the size of the mask (d*d).
+        """
+        if isinstance(ratio, float):
+            self.fixed_ratio = True
+            self.ratio = (ratio, ratio)
+        elif isinstance(ratio, tuple) and len(ratio) == 2 and all(isinstance(r, float) for r in ratio):
+            self.fixed_ratio = False
+            self.ratio = ratio
+        else:
+            raise ValueError("Ratio must be a float or a tuple of two floats.")
+
+        self.patch_size = patch_size
+        self.p = p
+
+    def __call__(self, tensor):
+
+        if random.random() > self.p: return tensor
+
+        _, h, w = tensor.shape
+        mask = torch.ones((h, w), dtype=torch.float32)
+
+        if self.fixed_ratio:
+            ratio = self.ratio[0]
+        else:
+            ratio = random.uniform(self.ratio[0], self.ratio[1])
+
+        # Calculate the number of masks needed
+        num_masks = int((h * w * ratio) / (self.patch_size ** 2))
+
+        # Generate non-overlapping random positions
+        selected_positions = set()
+        while len(selected_positions) < num_masks:
+            top = random.randint(0, (h // self.patch_size) - 1) * self.patch_size
+            left = random.randint(0, (w // self.patch_size) - 1) * self.patch_size
+            selected_positions.add((top, left))
+
+        for (top, left) in selected_positions:
+            mask[top:top+self.patch_size, left:left+self.patch_size] = 0
+
+        return tensor * mask.expand_as(tensor)
+
+def augmentation_dataset(opt, root):
+    
+    #transforms.RandomHorizontalFlip(p=0.5),
+    #transforms.RandomRotation(180),
+    #transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
+    #transforms.ToTensor(),
+    #RandomMask(ratio=(0.00, 0.75), patch_size=16, p=0.5),
+    
+    if opt.isTrain:
+        crop_func = transforms.RandomCrop(opt.cropSize)
+
+    elif opt.no_crop:
+        crop_func = transforms.Lambda(lambda img: img)
+    else:
+        #Eval will apply center crop
+        crop_func = transforms.CenterCrop(opt.cropSize)
+
+
+    if opt.isTrain:
+        rotate_func = transforms.RandomRotation(180)
+        color_func = transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5)
+        random_mask_func = RandomMask(ratio=(0.00, 0.75), patch_size=16, p=0.5)      
+    else:
+        #Eval
+        rotate_func = transforms.Lambda(lambda img: img)
+        color_func = transforms.Lambda(lambda img: img)
+        random_mask_func = transforms.Lambda(lambda img: img)
+
+    if opt.isTrain and not opt.no_flip:
+        flip_func = transforms.RandomHorizontalFlip(p=0.5)
+    else:
+        flip_func = transforms.Lambda(lambda img: img)
+    
+    
+    if not opt.isTrain and opt.no_resize:
+        rz_func = transforms.Lambda(lambda img: img)
+    else:
+        # rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+        rz_func = transforms.Resize((opt.loadSize, opt.loadSize))
+
+    dset = datasets.ImageFolder(
+            root,
+            transforms.Compose([
+                rz_func,
+                # transforms.Lambda(lambda img: data_augment(img, opt)),
+                crop_func,
+                flip_func,
+                rotate_func,
+                color_func,
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                random_mask_func,
+            ]))
+    return dset
 
 class FileNameDataset(datasets.ImageFolder):
     def name(self):

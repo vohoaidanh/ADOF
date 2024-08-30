@@ -198,7 +198,7 @@ class ResNet(nn.Module):
         return x
 
 class Resnet_Mask(nn.Module):
-    def __init__(self, augment_prob=0.0,**kwargs):
+    def __init__(self, augment_prob=0.2,**kwargs):
         super(Resnet_Mask,self).__init__()
         self.augment_prob = augment_prob
         self.resnet = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
