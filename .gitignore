@@ -7,3 +7,4 @@ networks/*/
 .spyproject/
 experiment/images
 .ipynb_checkpoints/
+.spyproject/*

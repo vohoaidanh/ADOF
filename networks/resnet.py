@@ -208,3 +208,44 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
+if __name__ == "__main__":
+    import torch
+    from PIL import Image
+    import torchvision.transforms as transforms
+    import matplotlib.pyplot as plt
+
+    img_path = r"D:\dataset\biggan\1_fake\00176881.png"
+    img = Image.open(img_path)
+    
+    t = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    
+    img_tensor = t(img)
+
+    adof = ADOF(img_tensor.unsqueeze(0))    
+
+
+    #plt.imshow(img_tensor.permute(1,2,0))    
+    plt.imshow(adof[0].permute(1,2,0))    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

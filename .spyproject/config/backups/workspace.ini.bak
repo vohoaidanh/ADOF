@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['train.py', 'networks\\trainer.py', 'networks\\resnet.py', 'test.py', 'data\\datasets.py', 'README.md']
+recent_files = ['train.py', 'networks\\resnet.py', 'data\\datasets.py']
 
 [main]
 version = 0.2.0
