@@ -213,6 +213,7 @@ class Resnet_Mask(nn.Module):
             gradients = input_tensor.grad
             mask = (F.relu(gradients) > 0).float()
             if torch.rand(1)<0.5:
+                print('invert mask')
                 mask = 1-mask
 
             x = x*mask
@@ -223,8 +224,8 @@ def resnet50(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    #model = Resnet_Mask(augment_prob=0.2)
+    #model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = Resnet_Mask(augment_prob=0.2)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
@@ -233,11 +234,13 @@ if __name__ == '__main__':
     model = resnet50()
     model.eval()
     x = torch.rand(1,3,224,224)
-    model.eval()
-    model(x)
+    model.train()
+    out = [model(x) for _ in range(12)]
+
     
     
     
+    torch.rand(1)
     
     
     
