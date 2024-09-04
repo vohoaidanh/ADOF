@@ -6,3 +6,4 @@ experiment/**/*.zip
 networks/*/
 .spyproject/
 experiment/images
+.ipynb_checkpoints/
