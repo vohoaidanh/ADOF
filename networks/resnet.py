@@ -135,7 +135,7 @@ class ResNet(nn.Module):
         self.unfoldIndex = 0
         assert self.unfoldSize > 1
         assert -1 < self.unfoldIndex and self.unfoldIndex < self.unfoldSize*self.unfoldSize
-        self.adof = ADOF
+        #self.adof = ADOF
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -182,7 +182,7 @@ class ResNet(nn.Module):
  
     def forward(self, x):
         
-        x = self.adof(x)
+        #x = self.adof(x)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -202,21 +202,25 @@ class Resnet_Mask(nn.Module):
         super(Resnet_Mask,self).__init__()
         self.augment_prob = augment_prob
         self.resnet = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+        self.adof = ADOF
     
     def forward(self,x):
-        
         if self.training and (torch.rand(1)<self.augment_prob):
             input_tensor = x.clone().detach().requires_grad_()
             output_A = self.resnet(input_tensor)
             loss = output_A.sum(dim=1) 
             loss.backward(torch.ones_like(loss))
             gradients = input_tensor.grad
-            mask = (F.relu(gradients) > 0).float()
-            if torch.rand(1)<0.5:
-                print('invert mask')
-                mask = 1-mask
-
-            x = x*mask
+            #mask = (F.relu(gradients) > 0).float()
+            threshold = torch.quantile(torch.abs(gradients), 0.80)
+            mask = (torch.abs(gradients) < threshold).float()
+            
+            #if torch.rand(1)<0.5:
+            #    mask = 1-mask
+            
+            x = self.adof(x)*mask
+        else:
+            x = self.adof(x)
         return self.resnet(x)
 
 def resnet50(pretrained=False, **kwargs):
@@ -225,7 +229,9 @@ def resnet50(pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     #model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    model = Resnet_Mask(augment_prob=0.2)
+    model = Resnet_Mask(augment_prob=0.3)
+    model.resnet.load_state_dict(torch.load(r'./weights/ADOF_model_epoch_9.pth', map_location='cpu'), strict=True)
+    
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
@@ -233,20 +239,14 @@ def resnet50(pretrained=False, **kwargs):
 if __name__ == '__main__':
     model = resnet50()
     model.eval()
-    x = torch.rand(1,3,224,224)
+    x = torch.rand(4,3, 10,10)
     model.train()
     out = [model(x) for _ in range(12)]
+    
+    # 63/(63+6)
+    #P(Táo|Đỏ) =   P(Táo) * P(Đỏ|Táo) / (P(Táo) * P(Đỏ|Táo) + P(Cam)*P(Đỏ|Cam))
+    
 
-    
-    
-    
-    torch.rand(1)
-    
-    
-    
-    
-    
-    
     
     
     
