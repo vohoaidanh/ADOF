@@ -4,7 +4,8 @@ import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
-
+######################
+from denoise import IRCNN
 
 __all__ = ['ResNet', 'resnet50']
 
@@ -135,7 +136,7 @@ class ResNet(nn.Module):
         self.unfoldIndex = 0
         assert self.unfoldSize > 1
         assert -1 < self.unfoldIndex and self.unfoldIndex < self.unfoldSize*self.unfoldSize
-        self.adof = ADOF
+        #self.adof = ADOF
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -182,7 +183,7 @@ class ResNet(nn.Module):
  
     def forward(self, x):
         
-        x = self.adof(x)
+        #x = self.adof(x)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -196,6 +197,42 @@ class ResNet(nn.Module):
         x = self.fc1(x)
 
         return x
+    
+
+class Resnet_Denoise(nn.Module):
+    
+    def __init__(self, discriminator=None):
+        super(Resnet_Denoise, self).__init__()
+        self.denoise = IRCNN(in_nc=3, out_nc=3, nc = 64)
+        self.adof = ADOF
+        self.loss_discriminator = nn.BCEWithLogitsLoss() # loss discriminator
+        self.loss_recon = F.l1_loss
+        
+        if discriminator is not None: 
+            self.discriminator = discriminator
+            for param in self.discriminator.parameters():
+                param.requires_grad = False
+        else:
+            raise ValueError("Discriminator trained model is required but not provided.")
+            
+
+    def forward(self, x):
+        denoise = self.denoise(x)
+        return denoise
+        
+    def get_loss(self, x):   
+        x_denoise = self.forward(x)
+        pre_y_fake = self.discriminator(self.adof(x_denoise))
+        # Generator wants to maximize the probability of Discriminator being "fooled"
+        loss_1 = self.loss_discriminator(pre_y_fake, torch.ones_like(pre_y_fake))
+        loss_2 = self.loss_recon(x, x_denoise)
+        return loss_1 , loss_2
+    
+    def get_validate(self,x):
+        x_denoise = self.forward(x)
+        pre_y_fake = self.discriminator(self.adof(x_denoise))
+        return pre_y_fake
+    
 
 
 def resnet50(pretrained=False, **kwargs):
@@ -230,12 +267,21 @@ if __name__ == "__main__":
     #plt.imshow(img_tensor.permute(1,2,0))    
     plt.imshow(adof[0].permute(1,2,0))    
     
+    discriminator = resnet50()
+    model_denoise = Resnet_Denoise(discriminator=discriminator)
+    
+    out = model_denoise(img_tensor)    
     
     
+    plt.imshow(img_tensor.permute(1,2,0))    
+    plt.imshow(out.detach().permute(1,2,0))    
     
+    loss = model_denoise.get_loss(img_tensor.unsqueeze(0))
     
+    torch.sum(img_tensor - out.detach())
     
-    
+    out = model_denoise.get_loss(torch.rand(3,3,224,224))    
+
     
     
     

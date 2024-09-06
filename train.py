@@ -85,7 +85,7 @@ if __name__ == '__main__':
         print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
     # Run for the first time to test the code for any errors
-    model.eval();testmodel();
+    #model.eval();testmodel();
 
     model.train()
     print(f'cwd: {os.getcwd()}')
@@ -102,8 +102,10 @@ if __name__ == '__main__':
             model.optimize_parameters()
 
             if model.total_steps % opt.loss_freq == 0:
-                print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss: {} at step: {} lr {}".format(model.loss, model.total_steps, model.lr))
+                print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss discriminator: {}; Train loss denoise: {} at step: {} lr {}".format(model.loss_1, model.loss_2, model.total_steps, model.lr))
                 train_writer.add_scalar('loss', model.loss, model.total_steps)
+        
+        model.save_networks(f'{epoch}')
 
         if epoch % opt.delr_freq == 0 and epoch != 0:
             print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), 'changing lr at the end of epoch %d, iters %d' %
@@ -112,14 +114,14 @@ if __name__ == '__main__':
             
 
         # Validation
-        model.save_networks(f'{epoch}')
-        model.eval()
-        acc, ap = validate(model.model, val_opt)[:2]
-        val_writer.add_scalar('accuracy', acc, model.total_steps)
-        val_writer.add_scalar('ap', ap, model.total_steps)
-        print("(Val @ epoch {}) acc: {}; ap: {}".format(epoch, acc, ap))
-        testmodel()
-        model.train()
+        #model.save_networks(f'{epoch}')
+        #model.eval()
+        #acc, ap = validate(model.model, val_opt)[:2]
+        #val_writer.add_scalar('accuracy', acc, model.total_steps)
+        #val_writer.add_scalar('ap', ap, model.total_steps)
+        #print("(Val @ epoch {}) acc: {}; ap: {}".format(epoch, acc, ap))
+        #testmodel()
+        #model.train()
 
     #model.eval();testmodel()
     model.save_networks('last')
