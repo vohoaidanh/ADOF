@@ -5,7 +5,10 @@ from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 ######################
-from denoise import IRCNN
+if __name__ == '__main__':
+    from denoise import IRCNN, UNet_denoise
+else:
+    from .denoise import IRCNN, UNet_denoise
 
 __all__ = ['ResNet', 'resnet50']
 
@@ -201,30 +204,43 @@ class ResNet(nn.Module):
 
 class Resnet_Denoise(nn.Module):
     
-    def __init__(self, discriminator=None):
+    def __init__(self, discriminator=None, denoise=None):
         super(Resnet_Denoise, self).__init__()
-        self.denoise = IRCNN(in_nc=3, out_nc=3, nc = 64)
         self.adof = ADOF
-        self.loss_discriminator = nn.BCEWithLogitsLoss() # loss discriminator
+        self.loss_discriminator = nn.BCELoss() #nn.BCEWithLogitsLoss() # loss discriminator
         self.loss_recon = F.l1_loss
         
-        if discriminator is not None: 
+        if discriminator is None: 
+            raise ValueError("Discriminator trained model is required but not provided.")
+        else:
             self.discriminator = discriminator
             for param in self.discriminator.parameters():
                 param.requires_grad = False
-        else:
-            raise ValueError("Discriminator trained model is required but not provided.")
             
+        if denoise is None: 
+            raise ValueError("Denoise model is required but not provided.")
+        else:
+            self.denoise = denoise
 
+                       
     def forward(self, x):
         denoise = self.denoise(x)
         return denoise
         
     def get_loss(self, x):   
         x_denoise = self.forward(x)
-        pre_y_fake = self.discriminator(self.adof(x_denoise))
+        pre_y_real = self.discriminator(self.adof(x))
+        pre_y_real = torch.sigmoid(pre_y_real)  
+        
+        pre_y_real[pre_y_real < 0.5] = 0.5
+        pre_y_real[pre_y_real > 0.5] = 1.0
+
+        pre_y_fake = self.discriminator(self.adof(x * x_denoise))
+        pre_y_fake = torch.sigmoid(pre_y_fake)
+
         # Generator wants to maximize the probability of Discriminator being "fooled"
-        loss_1 = self.loss_discriminator(pre_y_fake, torch.ones_like(pre_y_fake))
+        #loss_1 = self.loss_discriminator(pre_y_fake, torch.ones_like(pre_y_fake))
+        loss_1 = self.loss_discriminator(pre_y_fake, pre_y_real)
         loss_2 = self.loss_recon(x, x_denoise)
         return loss_1 , loss_2
     
@@ -245,13 +261,21 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
+def build_model(discriminator_trained_weight = r'weights/ADOF_model_epoch_9.pth'):
+    discriminator = resnet50(num_classes=1)
+    denoise = UNet_denoise()
+    model = Resnet_Denoise(discriminator=discriminator, denoise=denoise)
+    model.discriminator.load_state_dict(torch.load(discriminator_trained_weight, map_location='cpu'), strict=True)
+    return model
+
+
 if __name__ == "__main__":
     import torch
     from PIL import Image
     import torchvision.transforms as transforms
     import matplotlib.pyplot as plt
 
-    img_path = r"D:\dataset\biggan\1_fake\00176881.png"
+    img_path = r"D:\dataset\biggan\0_real\235--n02106662_10101.png"
     img = Image.open(img_path)
     
     t = transforms.Compose([
@@ -267,23 +291,21 @@ if __name__ == "__main__":
     #plt.imshow(img_tensor.permute(1,2,0))    
     plt.imshow(adof[0].permute(1,2,0))    
     
-    discriminator = resnet50()
-    model_denoise = Resnet_Denoise(discriminator=discriminator)
+
+    model_denoise = build_model(discriminator_trained_weight=r'D:/K32/do_an_tot_nghiep/ADOF/weights/ADOF_model_epoch_9.pth')
     
-    out = model_denoise(img_tensor)    
-    
-    
+    out = model_denoise(img_tensor.unsqueeze(0))    
+    loss = model_denoise.get_loss(img_tensor.unsqueeze(0))    
     plt.imshow(img_tensor.permute(1,2,0))    
-    plt.imshow(out.detach().permute(1,2,0))    
+    plt.imshow(out[0].detach().permute(1,2,0))    
     
     loss = model_denoise.get_loss(img_tensor.unsqueeze(0))
     
     torch.sum(img_tensor - out.detach())
     
-    out = model_denoise.get_loss(torch.rand(3,3,224,224))    
+    #out = model_denoise.get_loss(torch.rand(3,3,224,224))    
 
-    
-    
+
     
     
     

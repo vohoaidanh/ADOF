@@ -1,7 +1,7 @@
 import functools
 import torch
 import torch.nn as nn
-from networks.resnet import resnet50, Resnet_Denoise
+from networks.resnet import resnet50, build_model
 from networks.base_model import BaseModel, init_weights
 
 
@@ -14,11 +14,11 @@ class Trainer(BaseModel):
 
         if self.isTrain and not opt.continue_train:
             #self.model = resnet50(pretrained=False, num_classes=1)
-            self.model = Resnet_Denoise()
+            self.model = build_model()
 
         if not self.isTrain or opt.continue_train:
             #self.model = resnet50(num_classes=1)
-            self.model = Resnet_Denoise()
+            self.model = build_model()
 
         if self.isTrain:
             self.loss_fn = nn.BCEWithLogitsLoss()
@@ -60,10 +60,10 @@ class Trainer(BaseModel):
         return self.loss_fn(self.output.squeeze(1), self.label)
 
     def optimize_parameters(self):
-        self.forward()
+        #self.forward()
         #self.loss = self.loss_fn(self.output.squeeze(1), self.label)
-        self.loss_1, self.loss_2 = self.model.get_loss()
-        self.loss = self.loss_1 + self.loss_2
+        self.loss_1, self.loss_2 = self.model.get_loss(self.input)
+        self.loss = self.loss_1 + 0.5*self.loss_2
         self.optimizer.zero_grad()
         self.loss.backward()
         self.optimizer.step()

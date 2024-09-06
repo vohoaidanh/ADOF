@@ -67,15 +67,52 @@ class IRCNN(nn.Module):
         n = self.model(x)
         return x-n
     
+import segmentation_models_pytorch as smp
+
+def UNet_denoise(activation=None):
+    model = smp.Unet(
+      encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
+      encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
+      in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+      classes=3,                      # model output channels (number of classes in your dataset)
+      activation="softmax" # có thể thay đổi xem
+    )
+    return model
+
+    
 if __name__ == '__main__':
     import torch
     from torchsummary import summary
+    import matplotlib.pyplot as plt
+    
+    from PIL import Image
+    import torchvision.transforms as transforms
 
-    model = IRCNN(3,3,64)
-    x = torch.rand(3,224,224)
+    img_path = r"D:\dataset\biggan\0_real\235--n02106662_10101.png"
+    img = Image.open(img_path)
+    
+    t = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    
+    img_tensor = t(img)
+
+
+    #model = IRCNN(3,3,64)
+    model = UNet_denoise()
+    x = torch.rand(1,3,224,224)
     model.eval()
-    y = model(x)
-    summary(model, input_size=x.size())
+    y = model(img_tensor.unsqueeze(0))
+    summary(model, input_size=img_tensor.size())
+    plt.imshow(y[0][0].detach())
+    yy = y[0].detach()
+    plt.imshow((img_tensor ).permute(1,2,0))
+    plt.imshow((img_tensor * yy).permute(1,2,0))
+    loss = model.get
+
+
+
 
 
 
