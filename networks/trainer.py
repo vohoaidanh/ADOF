@@ -1,7 +1,7 @@
 import functools
 import torch
 import torch.nn as nn
-from networks.resnet import resnet50
+from networks.resnet import resnet50, build_model
 from networks.base_model import BaseModel, init_weights
 
 
@@ -13,10 +13,12 @@ class Trainer(BaseModel):
         super(Trainer, self).__init__(opt)
 
         if self.isTrain and not opt.continue_train:
-            self.model = resnet50(pretrained=False, num_classes=1)
+            #self.model = resnet50(pretrained=False, num_classes=1)
+            self.model = build_model()
 
         if not self.isTrain or opt.continue_train:
-            self.model = resnet50(num_classes=1)
+            #self.model = resnet50(num_classes=1)
+            self.model = build_model()
 
         if self.isTrain:
             self.loss_fn = nn.BCEWithLogitsLoss()

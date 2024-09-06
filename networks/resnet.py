@@ -1,3 +1,4 @@
+import cv2
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
@@ -135,7 +136,7 @@ class ResNet(nn.Module):
         self.unfoldIndex = 0
         assert self.unfoldSize > 1
         assert -1 < self.unfoldIndex and self.unfoldIndex < self.unfoldSize*self.unfoldSize
-        self.adof = ADOF
+        #self.adof = ADOF
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -181,8 +182,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
  
     def forward(self, x):
-        
-        x = self.adof(x)
+        #x = self.adof(x)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -197,7 +197,44 @@ class ResNet(nn.Module):
 
         return x
 
-
+class MiDas():
+    def __init__(self, percent=0.5, fill_in=True):
+        self.percent = percent
+        self.fill_in = fill_in
+        model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
+        self.midas = torch.hub.load("intel-isl/MiDaS", model_type)
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.midas.to(device)
+        self.midas.eval()
+    
+    def __call__(self,x):
+        deepmap = self.midas(x)
+        threshold = torch.quantile(deepmap, self.percent)  # Ví dụ: phân vị 75%
+        mask = torch.where(deepmap <= threshold, torch.tensor(1.0), torch.tensor(0.0))
+        mask = mask.unsqueeze(1).repeat(1, 3, 1, 1)
+        
+        if self.fill_in:
+            result = self.fill_fn(x, mask)
+        
+        return result, deepmap
+    
+    def fill_fn(self, x, origin_mask):
+        result = x.clone()
+        mask = origin_mask.clone()
+        result = x * mask
+        for i in range(3):
+            mask = (result==0).float()
+            roll = torch.roll(result, shifts=56, dims=1) * mask
+            result = result + roll
+        
+        for i in range(3):
+            mask = (result==0).float()
+            roll = torch.roll(result, shifts=56, dims=2) * mask
+            result = result + roll
+        
+        return result
+    
+    
 def resnet50(pretrained=False, **kwargs):
     """Constructs a ResNet-50 model.
     Args:
@@ -208,3 +245,76 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
+class Resnet_MiDas(nn.Module):
+    def __init__(self, percent=0.5,fill_in=True):
+        super(Resnet_MiDas, self).__init__()
+        self.midas = MiDas(percent=percent, fill_in=fill_in)
+        self.resnet = resnet50(pretrained=False, num_classes=1)
+        self.adof = ADOF
+        
+    def forward(self,x):
+        x,_ = self.midas(x)
+        x = self.adof(x)
+        x = self.resnet(x)
+        return x
+        
+        
+        
+
+def build_model():
+    model = Resnet_MiDas(percent=0.5,fill_in=True)
+    return model
+
+if __name__ == '__main__':
+    import torchvision.transforms as transforms
+    from PIL import Image
+    import matplotlib.pyplot as plt
+    t = transforms.Compose([
+        transforms.CenterCrop((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+    
+    def fill_in(x, origin_mask):
+        result = x.clone()
+        mask = origin_mask.clone()
+        result = x * mask
+        for i in range(3):
+            mask = (result==0).float()
+            roll = torch.roll(result, shifts=56, dims=1) * mask
+            result = result + roll
+        
+        for i in range(3):
+            mask = (result==0).float()
+            roll = torch.roll(result, shifts=56, dims=2) * mask
+            result = result + roll
+        
+        return result
+    
+    midas = MiDas()
+    
+    img = Image.open(r"D:\dataset\gaugan\0_real\000000516038.png")      
+    img_tensor = t(img)  
+    img = Image.open(r"D:\dataset\gaugan\0_real\000000581062.png")      
+    img_tensor2 = t(img)  
+    
+    img_tensor = torch.stack([img_tensor,img_tensor2],dim=0)
+
+    result, deep = midas(img_tensor)   
+    plt.imshow(result[1].detach().permute(1,2,0), cmap='gray')
+    plt.imshow(deep[0:1].detach().permute(1,2,0), cmap='gray')
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
