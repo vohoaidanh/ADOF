@@ -230,13 +230,13 @@ class Resnet_Denoise(nn.Module):
     def get_loss(self, x):   
         x_denoise = self.forward(x)
         pre_y_real = self.discriminator(self.adof(x))
-        pre_y_real = torch.sigmoid(pre_y_real)  
-        
+        pre_y_real = F.sigmoid(pre_y_real)  
+
         pre_y_real[pre_y_real < 0.5] = 0.5
         pre_y_real[pre_y_real > 0.5] = 1.0
 
         pre_y_fake = self.discriminator(self.adof(x * x_denoise))
-        pre_y_fake = torch.sigmoid(pre_y_fake)
+        pre_y_fake = F.sigmoid(pre_y_fake)  
 
         # Generator wants to maximize the probability of Discriminator being "fooled"
         #loss_1 = self.loss_discriminator(pre_y_fake, torch.ones_like(pre_y_fake))
@@ -305,15 +305,15 @@ if __name__ == "__main__":
     
     #out = model_denoise.get_loss(torch.rand(3,3,224,224))    
 
+    y = model_denoise.get_loss(torch.randn(3,3,224,224))    
+    
+    for name, param in model_denoise.named_parameters():
+        print(f'Parameter name: {name}')
+    
+        
+    
+    
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
