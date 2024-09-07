@@ -112,7 +112,8 @@ if __name__ == '__main__':
             
 
         # Validation
-        model.save_networks(f'{epoch}')
+        #model.save_networks(f'{epoch}')
+        model.save_networks('last')
         model.eval()
         acc, ap = validate(model.model, val_opt)[:2]
         val_writer.add_scalar('accuracy', acc, model.total_steps)
