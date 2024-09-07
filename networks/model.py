@@ -51,7 +51,7 @@ class Backbone(nn.Module):
 class Detector(nn.Module):
     def __init__(self, backbone, num_classes=1, pretrained=False, freeze_exclude=None):
         super(Detector, self).__init__()
-        
+        self.adof = ADOF
         # Tạo backbone từ timm
         if isinstance(backbone, str):
             self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
@@ -69,7 +69,7 @@ class Detector(nn.Module):
         self.classifier = nn.Linear(in_features, num_classes)
         
     def forward(self, x):
-
+        x = self.adof(x)
         features = self.backbone(x)
         output = self.classifier(features)
         
@@ -90,6 +90,8 @@ def build_model(**kwargs):
 if __name__  == '__main__':
     from torchsummary import summary
     model_list = timm.list_models(filter='vit*')
+    vgg_list = timm.list_models(filter='vgg*')
+    eff_list = timm.list_models(filter='ef*')
 
 # =============================================================================
 #     from resnet import resnet50
@@ -100,8 +102,8 @@ if __name__  == '__main__':
 #     backbone(torch.rand(1,3,224,224)).shape
 # =============================================================================
 
-    backbone = 'vit_small_patch16_224'
-    model = build_model(backbone=backbone, num_classes=1, freeze_exclude=['mlp'])
+    backbone = 'efficientformerv2_s2'
+    model = build_model(backbone=backbone, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     
@@ -109,7 +111,7 @@ if __name__  == '__main__':
 
 
 
-
+del model
 
 
 
