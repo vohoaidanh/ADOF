@@ -102,7 +102,7 @@ if __name__  == '__main__':
 #     backbone(torch.rand(1,3,224,224)).shape
 # =============================================================================
 
-    backbone = 'efficientformerv2_s2'
+    backbone = 'vit_base_patch32_clip_224'
     model = build_model(backbone=backbone, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
