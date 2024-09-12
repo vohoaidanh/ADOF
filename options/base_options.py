@@ -41,6 +41,9 @@ class BaseOptions():
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{loadSize}')
         parser.add_argument('--delr_freq', type=int, default=20, help='frequency of changing lr')
+########
+        parser.add_argument('--backbone', type=str, default='adof', help='models backbone')
+        parser.add_argument('--num_features', type=str, default='auto', help='backbone.num_features')
 
         
         self.initialized = True

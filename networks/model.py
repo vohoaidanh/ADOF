@@ -1,3 +1,5 @@
+#!ls -l /root/.cache/huggingface/hub/
+
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
@@ -49,7 +51,7 @@ class Backbone(nn.Module):
         return features
     
 class Detector(nn.Module):
-    def __init__(self, backbone, num_classes=1, pretrained=False, freeze_exclude=None):
+    def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
         super(Detector, self).__init__()
         self.adof = ADOF
         # Tạo backbone từ timm
@@ -66,6 +68,9 @@ class Detector(nn.Module):
         if isinstance(freeze_exclude, list):
             self.freeze_layers(self.backbone, freeze_exclude)
         
+        if num_features != 'auto':
+            in_features = int(num_features)
+        
         self.classifier = nn.Linear(in_features, num_classes)
         
     def forward(self, x):
@@ -81,7 +86,7 @@ class Detector(nn.Module):
                 param.requires_grad = False
             else:
                 param.requires_grad = True
-        
+
 
 def build_model(**kwargs):
     model = Detector(**kwargs)
@@ -89,9 +94,10 @@ def build_model(**kwargs):
 
 if __name__  == '__main__':
     from torchsummary import summary
-    model_list = timm.list_models(filter='vit*')
+    vit_list = timm.list_models(filter='*vit*')
     vgg_list = timm.list_models(filter='vgg*')
     eff_list = timm.list_models(filter='ef*')
+    resnet_list = timm.list_models(filter='resn*')
 
 # =============================================================================
 #     from resnet import resnet50
@@ -102,8 +108,8 @@ if __name__  == '__main__':
 #     backbone(torch.rand(1,3,224,224)).shape
 # =============================================================================
 
-    backbone = 'vit_base_patch32_clip_224'
-    model = build_model(backbone=backbone, num_classes=1, freeze_exclude=None)
+    backbone = 'convit_base'
+    model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     

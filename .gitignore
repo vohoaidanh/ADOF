@@ -3,7 +3,8 @@ checkpoints/*
 *.pth
 __pycache__/
 experiment/**/*.zip
-networks/*/
 .spyproject/
+.spyproject/*
 experiment/images
-.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+**/ckpt/*

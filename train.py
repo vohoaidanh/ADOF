@@ -78,7 +78,7 @@ if __name__ == '__main__':
             Testopt.dataroot = '{}/{}'.format(Testdataroot, val)
             Testopt.classes = os.listdir(Testopt.dataroot) if multiclass[v_id] else ['']
             Testopt.no_resize = False
-            Testopt.no_crop = True
+            Testopt.no_crop = False
             acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
             accs.append(acc);aps.append(ap)
             print("({} {:12}) acc: {:.1f}; ap: {:.1f}; r_acc: {:.1f}; f_acc: {:.1f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
@@ -90,6 +90,7 @@ if __name__ == '__main__':
     model.train()
     print(f'cwd: {os.getcwd()}')
     for epoch in range(opt.niter):
+        start_time = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
         epoch_start_time = time.time()
         iter_data_time = time.time()
         epoch_iter = 0
@@ -113,6 +114,8 @@ if __name__ == '__main__':
 
         # Validation
         #model.save_networks(f'{epoch}')
+        print(' Epoch', epoch,':',start_time,"-->", time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+
         model.save_networks('last')
         model.eval()
         acc, ap = validate(model.model, val_opt)[:2]

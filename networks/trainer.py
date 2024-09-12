@@ -15,11 +15,11 @@ class Trainer(BaseModel):
 
         if self.isTrain and not opt.continue_train:
             #self.model = resnet50(pretrained=False, num_classes=1)
-            self.model = build_model(backbone='vit_base_patch32_clip_224', pretrained=True, num_classes=1, freeze_exclude=None)
+            self.model = build_model(backbone=opt.backbone, num_feature=opt.num_features, pretrained=True, num_classes=1, freeze_exclude=None)
 
 
         if not self.isTrain or opt.continue_train:
-            self.model = build_model(backbone='vit_base_patch32_clip_224', pretrained=True, num_classes=1, freeze_exclude=None)
+            self.model = build_model(backbone='vit_base_r50_s16_224', pretrained=True, num_classes=1, freeze_exclude=None)
 
         if self.isTrain:
             self.loss_fn = nn.BCEWithLogitsLoss()
