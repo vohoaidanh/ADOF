@@ -1,17 +1,5 @@
 # ADOF
 
-<p align="center">
-	<br>
-	---
-</p>
-
-<img src="./NPR.png" width="100%" alt="overall pipeline">
-
-#Reference github repository for the paper [---](url).
-```
-@misc{...
-}
-```
 ## Environment setup
 **Classification environment:** 
 We recommend installing the required packages by running the command:
