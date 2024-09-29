@@ -111,6 +111,17 @@ datasets
 ```sh
 CUDA_VISIBLE_DEVICES=0 ./pytorch18/bin/python train.py --name 4class-resnet-car-cat-chair-horse --dataroot ./datasets/ForenSynths_train_val --classes car,cat,chair,horse --batch_size 32 --delr_freq 5 --lr 0.0002 --niter 50
 ```
+or
+```python
+!find /content/datasets -type d -name "*ipynb*" -exec rm -r {} +
+!python train.py \
+--name adof-progan-4class- \
+--dataroot /content/datasets/ForenSynths_train \
+--num_thread 2 \
+--blur_prob 0 --blur_sig 0.0,0.5 \
+--jpg_prob 0 --jpg_qual 75,100 \
+--classes car,cat,chair,horse --batch_size 32 --delr_freq 5 --lr 0.0002 --niter 30
+```
 
 ## Testing the detector
 Modify the dataroot in test.py.
