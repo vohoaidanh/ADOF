@@ -13,6 +13,10 @@ from networks.trainer import Trainer
 from options.train_options import TrainOptions
 from options.test_options import TestOptions
 from util import Logger
+####################################################
+from comet_ml import Experiment
+#from comet_ml.integration.pytorch import log_model
+####################################################
 
 import random
 def seed_torch(seed=1029):
@@ -55,8 +59,18 @@ def get_val_opt():
     return val_opt
 
 
+
 if __name__ == '__main__':
+    #############################################################
+    experiment = Experiment(
+      api_key="MS89D8M6skI3vIQQvamYwDgEc",
+      project_name="adof",
+      workspace="danhvohoai2-gmail-com"
+    )
+    #############################################################
     opt = TrainOptions().parse()
+
+
     seed_torch(100)
     Testdataroot = os.path.join(opt.dataroot, 'test')
     opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.train_split)
@@ -71,7 +85,12 @@ if __name__ == '__main__':
     
     model = Trainer(opt)
     
+    opt_dict = vars(opt)
+    experiment.log_parameters(opt_dict)
+
+    
     def testmodel():
+        global experiment  # Declare that we are using the global 'experiment'
         print('*'*25);accs = [];aps = []
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
         for v_id, val in enumerate(vals):
@@ -82,8 +101,23 @@ if __name__ == '__main__':
             acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
             accs.append(acc);aps.append(ap)
             print("({} {:12}) acc: {:.1f}; ap: {:.1f}; r_acc: {:.1f}; f_acc: {:.1f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
+        
+            # Log the metrics for Comet
+            experiment.log_metric(f"test/acc_{val}", acc * 100)
+            experiment.log_metric(f"test/ap_{val}", ap * 100)
+            experiment.log_metric(f"test/r_acc_{val}", r_acc)
+            experiment.log_metric(f"test/f_acc_{val}", f_acc)
+        
         print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+     
+        # Log the mean values
+        mean_acc = np.array(accs).mean() * 100
+        mean_ap = np.array(aps).mean() * 100
+        experiment.log_metric("test/mean_acc", mean_acc)
+        experiment.log_metric("test/mean_ap", mean_ap)
+
+        
     # Run for the first time to test the code for any errors
     model.eval();testmodel();
 
@@ -105,6 +139,8 @@ if __name__ == '__main__':
             if model.total_steps % opt.loss_freq == 0:
                 print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss: {} at step: {} lr {}".format(model.loss, model.total_steps, model.lr))
                 train_writer.add_scalar('loss', model.loss, model.total_steps)
+                experiment.log_metric("train/loss", model.loss, step=model.total_steps)  # Log the current loss directly
+
 
         if epoch % opt.delr_freq == 0 and epoch != 0:
             print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), 'changing lr at the end of epoch %d, iters %d' %
@@ -121,6 +157,11 @@ if __name__ == '__main__':
         acc, ap = validate(model.model, val_opt)[:2]
         val_writer.add_scalar('accuracy', acc, model.total_steps)
         val_writer.add_scalar('ap', ap, model.total_steps)
+
+        experiment.log_metric("validation/loss", model.loss, step=model.total_steps)  # Log the current loss directly
+        experiment.log_metric("validation/acc", acc, step=model.total_steps)  # Log the current loss directly
+        experiment.log_metric("validation/ap", ap, step=model.total_steps)  # Log the current loss directly
+
         print("(Val @ epoch {}) acc: {}; ap: {}".format(epoch, acc, ap))
         testmodel()
         model.train()

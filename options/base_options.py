@@ -42,7 +42,7 @@ class BaseOptions():
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{loadSize}')
         parser.add_argument('--delr_freq', type=int, default=20, help='frequency of changing lr')
 ########
-        parser.add_argument('--backbone', type=str, default='adof', help='models backbone')
+        parser.add_argument('--backbone', type=str, default='resnet50', help='models backbone')
         parser.add_argument('--num_features', type=str, default='auto', help='backbone.num_features')
 
         
@@ -104,7 +104,10 @@ class BaseOptions():
             if id >= 0:
                 opt.gpu_ids.append(id)
         if len(opt.gpu_ids) > 0:
-            torch.cuda.set_device(opt.gpu_ids[0])
+            if torch.cuda.is_available():
+                torch.cuda.set_device(opt.gpu_ids[0])
+            else:
+                print("CUDA is not available. Using CPU.")
 
         # additional
         opt.classes = opt.classes.split(',')

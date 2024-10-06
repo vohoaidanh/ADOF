@@ -94,9 +94,13 @@ def build_model(**kwargs):
 
 if __name__  == '__main__':
     from torchsummary import summary
-    vit_list = timm.list_models(filter='*vit*')
+    all_model_list = timm.list_models()
+
+    vit_list = timm.list_models(filter='vit*')
     vgg_list = timm.list_models(filter='vgg*')
     eff_list = timm.list_models(filter='ef*')
+    mobilenet = timm.list_models(filter='*mobilenet*')
+    RegNet = timm.list_models(filter='*RegNet*')
     resnet_list = timm.list_models(filter='resn*')
 
 # =============================================================================
@@ -107,8 +111,9 @@ if __name__  == '__main__':
 #     backbone = Backbone(backbone)
 #     backbone(torch.rand(1,3,224,224)).shape
 # =============================================================================
-
-    backbone = 'convit_base'
+    #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
+    
+    backbone = 'mobilenetv3_small_100'
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
