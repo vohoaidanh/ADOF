@@ -63,8 +63,12 @@ class Detector(nn.Module):
         else:
             raise TypeError("backbone_name must be a string or a nn.Module instance")
         
-        in_features = self.backbone.num_features
         
+
+        #in_features = self.backbone.num_features
+        in_features = self.backbone(torch.randn(1, 3, 224, 224))
+        in_features = in_features.shape[1]
+
         if isinstance(freeze_exclude, list):
             self.freeze_layers(self.backbone, freeze_exclude)
         
@@ -111,24 +115,13 @@ if __name__  == '__main__':
 #     backbone = Backbone(backbone)
 #     backbone(torch.rand(1,3,224,224)).shape
 # =============================================================================
-    #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
+    #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'efficientnet_b0'
+    backbone = 'efficientvit_b0'
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     
     summary(model, input_size=(3,224,224))
-
-
-
-
-
-
-
-
-
-
-
 
 
