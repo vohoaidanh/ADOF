@@ -113,7 +113,7 @@ if __name__  == '__main__':
 # =============================================================================
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'mobilenetv3_small_100'
+    backbone = 'efficientnet_b0'
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))

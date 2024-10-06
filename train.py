@@ -66,17 +66,17 @@ def log_comet_metric():
     def decorator(func):
         @wraps(func)
         def wrapper(metric_name, *args, **kwargs):
-            value, step = func(*args, **kwargs)  # Execute the original function
+            value, step, epoch = func(*args, **kwargs)  # Execute the original function
             if experiment is not None:
                 # Assuming total_steps and experiment are globally available
-                experiment.log_metric(metric_name, value, step=step)
+                experiment.log_metric(metric_name, value, step=step, epoch = epoch)
             return value, step
         return wrapper
     return decorator
 
 @log_comet_metric()
-def log_metric(value, step):
-    return value, step
+def log_metric(value, step=None, epoch=None):
+    return value, step, epoch
 
 if __name__ == '__main__':
     #############################################################
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         experiment.log_parameters(opt_dict)
 
     
-    def testmodel(total_steps=None):
+    def testmodel(step=None, epoch=None):
         global experiment  # Declare that we are using the global 'experiment'
         print('*'*25);accs = [];aps = []
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
@@ -137,8 +137,8 @@ if __name__ == '__main__':
         mean_acc = np.array(accs).mean() * 100
         mean_ap = np.array(aps).mean() * 100
 
-        log_metric("test/acc", mean_acc, step=total_steps)
-        log_metric("test/ap", mean_ap, step=total_steps)
+        log_metric("test/acc", mean_acc, step=step, epoch=epoch)
+        log_metric("test/ap", mean_ap, step=step, epoch=epoch)
 
         
     # Run for the first time to test the code for any errors
@@ -162,7 +162,7 @@ if __name__ == '__main__':
             if model.total_steps % opt.loss_freq == 0:
                 print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss: {} at step: {} lr {}".format(model.loss, model.total_steps, model.lr))
                 train_writer.add_scalar('loss', model.loss, model.total_steps)
-                log_metric("train/loss", model.loss, step=model.total_steps)  # Log the current loss directly
+                log_metric("train/loss", model.loss, step=model.total_steps, epoch = epoch)  # Log the current loss directly
 
 
         if epoch % opt.delr_freq == 0 and epoch != 0:
@@ -181,12 +181,12 @@ if __name__ == '__main__':
         val_writer.add_scalar('accuracy', acc, model.total_steps)
         val_writer.add_scalar('ap', ap, model.total_steps)
 
-        log_metric("validation/loss", model.loss, step=model.total_steps)  # Log the current loss directly
-        log_metric("validation/acc", acc, step=model.total_steps)  # Log the current loss directly
-        log_metric("validation/ap", ap, step=model.total_steps)  # Log the current loss directly
+        log_metric("validation/loss", model.loss, step=model.total_steps, epoch = epoch)  # Log the current loss directly
+        log_metric("validation/acc", acc, step=model.total_steps, epoch = epoch)  # Log the current loss directly
+        log_metric("validation/ap", ap, step=model.total_steps, epoch = epoch)  # Log the current loss directly
 
         print("(Val @ epoch {}) acc: {}; ap: {}".format(epoch, acc, ap))
-        testmodel(model.total_steps)
+        testmodel(step = model.total_steps, epoch = epoch)
         model.train()
 
     #model.eval();testmodel()
