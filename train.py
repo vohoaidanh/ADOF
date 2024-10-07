@@ -79,9 +79,11 @@ def log_metric(value, step=None, epoch=None):
     return value, step, epoch
 
 if __name__ == '__main__':
+    opt = TrainOptions().parse()
+    
     #############################################################
     experiment = None
-    USE_COMET = True
+    USE_COMET = opt.use_comet
     if USE_COMET:
         experiment = Experiment(
           api_key="MS89D8M6skI3vIQQvamYwDgEc",
@@ -89,9 +91,7 @@ if __name__ == '__main__':
           workspace="danhvohoai2-gmail-com"
         )
     #############################################################
-    opt = TrainOptions().parse()
-
-
+    
     seed_torch(100)
     Testdataroot = os.path.join(opt.dataroot, 'test')
     opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.train_split)

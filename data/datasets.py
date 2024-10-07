@@ -42,7 +42,7 @@ def binary_dataset(opt, root):
             root,
             transforms.Compose([
                 rz_func,
-                # transforms.Lambda(lambda img: data_augment(img, opt)),
+                transforms.Lambda(lambda img: data_augment(img, opt)),
                 crop_func,
                 flip_func,
                 transforms.ToTensor(),

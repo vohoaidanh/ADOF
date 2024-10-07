@@ -44,6 +44,7 @@ class BaseOptions():
 ########
         parser.add_argument('--backbone', type=str, default='resnet50', help='models backbone')
         parser.add_argument('--num_features', type=str, default='auto', help='backbone.num_features')
+        parser.add_argument('--use_comet', action='store_true', help='USE_COMET for loging')
 
         
         self.initialized = True
