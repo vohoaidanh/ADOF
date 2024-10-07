@@ -1,0 +1,47 @@
+V100 train 
+only 01 model
+backbone = 'mobilenetv3_small_050'
+2024_10_07_01_49_12 Train loss: 0.12646940350532532 at step: 2400 lr 0.0002
+2024_10_07_01_50_05 Train loss: 0.1803523600101471 at step: 2800 lr 0.0002
+2024_10_07_01_50_55 Train loss: 0.09709139168262482 at step: 3200 lr 0.0002
+2024_10_07_01_51_49 Train loss: 0.04834134876728058 at step: 3600 lr 0.0002
+2024_10_07_01_53_03 Train loss: 0.03575809672474861 at step: 4000 lr 0.0002
+2024_10_07_01_54_22 Train loss: 0.05202765762805939 at step: 4400 lr 0.0002
+
+same time 02 model
+2024_10_07_03_18_41 Train loss: 0.06220220774412155 at step: 29600 lr 0.000162
+2024_10_07_03_19_57 Train loss: 0.01970953680574894 at step: 30000 lr 0.000162
+2024_10_07_03_21_14 Train loss: 0.017291950061917305 at step: 30400 lr 0.000162
+2024_10_07_03_22_30 Train loss: 0.01819361373782158 at step: 30800 lr 0.000162
+2024_10_07_03_23_41 Train loss: 0.0035776535514742136 at step: 31200 lr 0.000162
+
+RTX 4090: faster 1.5 time vs V100 with the same condition mobilenetv3_small_050, but 4090 just consume 80% GPU
+
+
+RTX 4090: train vgg19_bn
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:42:00.0 Off |                  Off |
+| 88%   67C    P2            386W /  450W |   12995MiB /  24564MiB |    100%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+cwd: /workspace/ADOF
+2024_10_07_03_25_16 Train loss: 0.03334985300898552 at step: 400 lr 0.0002
+2024_10_07_03_28_56 Train loss: 0.10962021350860596 at step: 800 lr 0.0002
+2024_10_07_03_32_36 Train loss: 0.011753831058740616 at step: 1200 lr 0.0002
+2024_10_07_03_36_17 Train loss: 0.025475697591900826 at step: 1600 lr 0.0002
+2024_10_07_03_39_57 Train loss: 0.03562431037425995 at step: 2000 lr 0.0002
+Saving model ./checkpoints/adof-vgg19_bn-2024_10_07_03_18_17/model_epoch_0.pth
+ Epoch 0 : 2024_10_07_03_21_35 --> 2024_10_07_03_42_16
+Saving model ./checkpoints/adof-vgg19_bn-2024_10_07_03_18_17/model_epoch_last.pth
+(Val @ epoch 0) acc: 0.946875; ap: 0.9976768730811156
+*************************
+2024_10_07_03_42_23
+(0 progan      ) acc: 94.3; ap: 99.7; r_acc: 0.9; f_acc: 1.0
+(1 stylegan    ) acc: 92.0; ap: 98.7; r_acc: 0.9; f_acc: 1.0
+(2 stylegan2   ) acc: 92.4; ap: 98.6; r_acc: 0.9; f_acc: 1.0
+(3 biggan      ) acc: 63.0; ap: 67.5; r_acc: 0.3; f_acc: 1.0
+(4 cyclegan    ) acc: 67.8; ap: 86.6; r_acc: 0.4; f_acc: 1.0
+(5 stargan     ) acc: 81.6; ap: 99.0; r_acc: 0.6; f_acc: 1.0
+(6 gaugan      ) acc: 55.3; ap: 59.6; r_acc: 0.1; f_acc: 1.0
+(7 deepfake    ) acc: 91.5; ap: 96.9; r_acc: 0.9; f_acc: 0.9
+(8 Mean      ) acc: 79.7; ap: 88.3

@@ -31,9 +31,11 @@ class BaseModel(nn.Module):
         print(f'Saving model {save_path}')
 
     # load models from the disk
-    def load_networks(self, epoch):
+    def load_networks(self, epoch, checkpoints_dir=None):
         load_filename = 'model_epoch_%s.pth' % epoch
         load_path = os.path.join(self.save_dir, load_filename)
+        if checkpoints_dir is not None:
+            load_path = os.path.join(checkpoints_dir, load_filename)
 
         print('loading the model from %s' % load_path)
         # if you are using PyTorch newer than 0.4 (e.g., built from

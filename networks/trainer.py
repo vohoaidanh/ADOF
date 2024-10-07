@@ -35,6 +35,9 @@ class Trainer(BaseModel):
 
         if not self.isTrain or opt.continue_train:
             self.load_networks(opt.epoch)
+        
+        if torch.cuda.is_available() and len(opt.gpu_ids) > 1:
+            self.model = nn.DataParallel(self.model)  # Sử dụng DataParallel
             
         if torch.cuda.is_available():
             self.model.to(opt.gpu_ids[0])
