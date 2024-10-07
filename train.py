@@ -172,7 +172,7 @@ if __name__ == '__main__':
             
 
         # Validation
-        #model.save_networks(f'{epoch}')
+        model.save_networks(f'{epoch}')
         print(' Epoch', epoch,':',start_time,"-->", time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
 
         model.save_networks('last')
