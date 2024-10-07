@@ -8,6 +8,8 @@ from validate import validate
 from networks.resnet import resnet50
 from options.test_options import TestOptions
 import networks.resnet as resnet
+from networks.model import build_model
+
 import numpy as np
 import random
 import random
@@ -50,7 +52,8 @@ opt = TestOptions().parse(print_options=False)
 print(f'Model_path {opt.model_path}')
 
 # get model
-model = resnet50(num_classes=1)
+#model = resnet50(num_classes=1)
+model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=False, num_classes=1, freeze_exclude=None)
 model.load_state_dict(torch.load(opt.model_path, map_location='cpu'), strict=True)
 model.cuda()
 model.eval()
