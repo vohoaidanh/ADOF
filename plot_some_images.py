@@ -106,23 +106,21 @@ plt.imshow(np.array(image))
 plt.imshow(image_tensor.numpy())  # Chuyển đổi tensor sang numpy array
     
 from networks.resnet import ADOF
+from networks.model import ADOFCross,ADOF
 
-adof = ADOF(image_tensor_origin.unsqueeze(0))
+adof = ADOFCross(image_tensor_origin.unsqueeze(0))
+
 plt.imshow(adof.squeeze(0).permute(1,2,0))  # Chuyển đổi tensor sang numpy array
 
 plt.plot(np.array(image)[100,:,0])
 plt.plot(image_tensor[100,:,0])
 plt.plot(adof[0].permute(1,2,0)[100,:,0])
 
-
-
 torch.var(image_tensor[100,:,0])
 
 torch.var(adof[0].permute(1,2,0)[100,:,0])
 
 torch.std(adof[0].permute(1,2,0)[100,:,0])
-
-
 
 
 
