@@ -49,14 +49,18 @@ class Backbone(nn.Module):
         features = self.backbone(x)
         features = features.view(-1, self.num_features)
         return features
-    
+
+from networks.resnet import resnet50
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
         super(Detector, self).__init__()
         self.adof = ADOF
         # Tạo backbone từ timm
         if isinstance(backbone, str):
-            self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
+            if backbone.lower() == 'adof':
+                self.backbone = resnet50(pretrained=False)
+            else:
+                self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         elif isinstance(backbone, nn.Module):
           # Sử dụng mô hình đã cho trực tiếp
             self.backbone = backbone
@@ -117,11 +121,16 @@ if __name__  == '__main__':
 # =============================================================================
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'vgg19_bn'
+    backbone = 'vit_base_patch32_224'
+    #backbone = resnet50(pretrained=False)
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     
     summary(model, input_size=(3,224,224))
-
-
+    pars = model.parameters()
+    pars = [i for i in pars]
+    
+    for name, param in model.named_parameters():
+        print(f"{name}")
+    

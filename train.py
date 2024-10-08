@@ -15,7 +15,7 @@ from options.test_options import TestOptions
 from util import Logger
 ####################################################
 from comet_ml import Experiment
-#from comet_ml.integration.pytorch import log_model
+from comet_ml.integration.pytorch import log_model
 #####################################################
 
 import random
@@ -173,6 +173,8 @@ if __name__ == '__main__':
 
         # Validation
         model.save_networks(f'{epoch}')
+
+            
         print(' Epoch', epoch,':',start_time,"-->", time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
 
         model.save_networks('last')

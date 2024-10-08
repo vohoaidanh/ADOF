@@ -84,5 +84,53 @@ plt.tick_params(axis='y', labelsize=30)
 image = Image.open(r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_fake_4.png").resize(size=(256,256))
 image.save(r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_fake_4_small.png")
     
+######################
+image = Image.open(r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_fake_4.png").resize(size=(224,224))
+
+import torch
+from torchvision import transforms
+
+# Bước 1: Định nghĩa các phép biến đổi
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),   # Thay đổi kích thước hình ảnh
+    transforms.ToTensor(),            # Chuyển đổi hình ảnh thành tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Chuẩn hóa
+])
+
+image_tensor_origin = transform(image)
+image_tensor = image_tensor_origin.permute(1, 2, 0)  # Chuyển đổi từ [C, H, W] sang [H, W, C]
+#image_tensor = image_tensor.clamp(0, 1)
+
+
+plt.imshow(np.array(image))
+plt.imshow(image_tensor.numpy())  # Chuyển đổi tensor sang numpy array
     
-    
+from networks.resnet import ADOF
+
+adof = ADOF(image_tensor_origin.unsqueeze(0))
+plt.imshow(adof.squeeze(0).permute(1,2,0))  # Chuyển đổi tensor sang numpy array
+
+plt.plot(np.array(image)[100,:,0])
+plt.plot(image_tensor[100,:,0])
+plt.plot(adof[0].permute(1,2,0)[100,:,0])
+
+
+
+torch.var(image_tensor[100,:,0])
+
+torch.var(adof[0].permute(1,2,0)[100,:,0])
+
+torch.std(adof[0].permute(1,2,0)[100,:,0])
+
+
+
+
+
+
+
+
+
+
+
+
+
