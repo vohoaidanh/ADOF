@@ -134,6 +134,43 @@ torch.mean(red_chanel[100,:])
 variance = torch.var(red_chanel, axis=1)
 plt.plot(variance)
 
+device='cpu'
+from torch.nn import functional as F
+def Mean(input_tensor):
+    device = input_tensor.device
+    batch_size, channels, height, width = input_tensor.size()
+
+    # Define the gradient filters for x and y directions
+    kernel_x = torch.ones((3,3), dtype=torch.float32, device=device)
+
+    # Expand the kernels to match the number of input channels
+    kernel_x = kernel_x.expand(channels, 1, 3, 3)
+
+    # Apply the filters
+    output = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels) 
+    
+    return output
+    
+#(1,3,224,224) , (3,1,3,3)
+mean_tensor = Mean(image_tensor_origin.unsqueeze(0))
+plt.imshow(mean_tensor.squeeze(0).permute(1,2,0))  # Chuyển đổi tensor sang numpy array
+
+plt.figure(figsize=(20, 10))
+plt.plot(mean_tensor[0][0][100,:]/9)
+plt.plot(image_tensor_origin[0][100,:])
+
+plt.plot(image_tensor_origin[0][100,:] - mean_tensor[0][0][100,:]/9)
+a = image_tensor_origin[0] - mean_tensor[0][0]/9
+plt.imshow(a)
 
 
+plt.plot(a[100,:])
+
+
+kernel_x = torch.tensor([[0, 0, 0], [0, -1, 1], [0, 0, 0]], dtype=torch.float32, device='cpu').unsqueeze(0).unsqueeze(0)
+kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
+
+# Expand the kernels to match the number of input channels
+kernel_x = kernel_x.expand(3, 1, 3, 3)
+kernel_y = kernel_y.expand(3, 1, 3, 3)
 
