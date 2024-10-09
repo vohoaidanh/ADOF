@@ -66,6 +66,31 @@ def ADOFCross(input_tensor):
   
     return output
 
+class SPPF(nn.Module):
+    def __init__(self, in_channels, out_channels, pool_sizes=[1, 2, 4]):
+        super(SPPF, self).__init__()
+        self.pool_sizes = pool_sizes
+        
+        # Define convolutional layer after pooling
+        self.conv = nn.Conv2d(in_channels * (len(pool_sizes) + 1), out_channels, kernel_size=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+    def forward(self, x):
+        # List to hold the pooled outputs
+        pools = []
+        
+        # Perform pooling for each size and append to the list
+        for size in self.pool_sizes:
+            pooled = nn.functional.avg_pool2d(x, kernel_size=size, stride=size)
+            # Upsample the pooled output to match the input size
+            pooled = nn.functional.interpolate(pooled, size=x.shape[2:], mode='nearest')
+            pools.append(pooled)
+        
+        # Concatenate the original input with pooled outputs
+        out = torch.cat([x] + pools, dim=1)
+        out = self.conv(out)
+        out = self.bn1(out)
+        return out
+    
 class Backbone(nn.Module):
     def __init__(self, backbone):
         super(Backbone, self).__init__()
@@ -78,11 +103,14 @@ class Backbone(nn.Module):
         return features
 
 from networks.resnet import resnet50
+
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
         super(Detector, self).__init__()
         self.adof = ADOF
         self.adofcross = ADOFCross
+        
+        self.sppf = lambda x: x
         # Tạo backbone từ timm
         self.c = 3
         if isinstance(backbone, str):
@@ -96,6 +124,12 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 self.backbone.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=2, padding=1, bias=False)
             
+            elif backbone.lower() == 'adofsppf':
+                self.backbone = resnet50(pretrained=False)
+                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
+                #in_features = self.backbone.num_features
+                self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
+                
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
@@ -105,8 +139,7 @@ class Detector(nn.Module):
         else:
             raise TypeError("backbone_name must be a string or a nn.Module instance")
         
-
-        #in_features = self.backbone.num_features
+        
         in_features = self.backbone(torch.randn(1, self.c, 224, 224))
         in_features = in_features.shape[1]
 
@@ -120,9 +153,11 @@ class Detector(nn.Module):
         
     def forward(self, x):
         x1 = self.adof(x)
+        x1 = self.sppf(x1)
         if self.c == 6:
             x2 = self.adofcross(x)
             x1 = torch.cat((x1, x2), dim=1)
+        
             
         features = self.backbone(x1)
         output = self.classifier(features)
@@ -162,18 +197,51 @@ if __name__  == '__main__':
 # =============================================================================
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'adofcross'
+    backbone = 'adofsppf'
     #backbone = resnet50(pretrained=False)
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     
     summary(model, input_size=(3,224,224))
-    #pars = model.parameters()
-    #pars = [i for i in pars]
+# =============================================================================
+#     #pars = model.parameters()
+#     #pars = [i for i in pars]
+#     
+#     #for name, param in model.named_parameters():
+#      #   print(f"{name}")
+#         
+#     conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
+#     conv2 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, dilation=10, bias=False)
+#     
+#     intensor = torch.rand(1,3,224,224)
+#     
+#     out1 = conv1(intensor)
+#     print(out1.shape)    
+#     
+#     out2 = conv2(intensor)
+#     print(out2.shape)
+#     
+#   
+# 
+#     
+#     sppf = SPPF(in_channels=3, out_channels=3)
+#     input_tensor = torch.randn(1, 3, 6, 6)  # Batch size of 1, 64 channels, 32x32 feature map
+#     
+#     output = sppf(input_tensor)
+#     output.shape
+#     
+#     
+#     nn.functional.avg_pool2d(input_tensor, kernel_size=2, stride=1)
+#     
+#     
+# =============================================================================
     
-    #for name, param in model.named_parameters():
-     #   print(f"{name}")
-        
+    
+    
+    
+    
+    
+    
     
     

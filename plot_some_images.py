@@ -108,7 +108,7 @@ plt.imshow(image_tensor.numpy())  # Chuyển đổi tensor sang numpy array
 from networks.resnet import ADOF
 from networks.model import ADOFCross,ADOF
 
-adof = ADOFCross(image_tensor_origin.unsqueeze(0))
+adof = ADOF(image_tensor_origin.unsqueeze(0))
 
 plt.imshow(adof.squeeze(0).permute(1,2,0))  # Chuyển đổi tensor sang numpy array
 
@@ -122,12 +122,17 @@ torch.var(adof[0].permute(1,2,0)[100,:,0])
 
 torch.std(adof[0].permute(1,2,0)[100,:,0])
 
+red_chanel = adof[0][0]
 
+plt.imshow(red_chanel)
+plt.plot(red_chanel[100,:])
+mean_per_row = torch.mean(red_chanel, axis=1)
+plt.plot(mean_per_row[100])
 
+torch.mean(red_chanel[100,:])
 
-
-
-
+variance = torch.var(red_chanel, axis=1)
+plt.plot(variance)
 
 
 
