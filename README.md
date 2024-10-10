@@ -1,4 +1,8 @@
 # ADOF
+<p align="center">
+<img src="https://img.shields.io/aur/last-modified/google-chrome">
+<img src="https://img.shields.io/badge/Author-Hoai--Danh.Vo-blue"> 
+</p>
 
 ## Demo
 Can you see Demo here: [Demo](https://fcxyzypk72sf4hiappsy7se.streamlit.app/)
