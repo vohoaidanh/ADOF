@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn as nn
+import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
@@ -109,6 +110,7 @@ class Detector(nn.Module):
         self.adof = ADOF
         self.adofcross = lambda x: x
         self.sppf = lambda x: x
+        # Tạo backbone từ timm
         self.c = 3
         if isinstance(backbone, str):
             if backbone.lower() == 'adof':
@@ -127,10 +129,9 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 #in_features = self.backbone.num_features
                 self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
-            
             elif backbone.lower() == 'cnndetection':
                 self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
-                self.adof = lambda x: x
+                self.adof = mean_filter_2d
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
@@ -171,6 +172,19 @@ class Detector(nn.Module):
             else:
                 param.requires_grad = True
 
+def mean_filter_2d(input_tensor, kernel_size=3):
+    device = input_tensor.device
+    batch_size, channels, height, width = input_tensor.size()
+
+    # Define the mean filter kernel for 3 channels
+    kernel = torch.ones((1, 1, kernel_size, kernel_size)) / (kernel_size * kernel_size)
+    
+    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
+
+
+    output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
+    
+    return output
 
 def build_model(**kwargs):
     model = Detector(**kwargs)
@@ -185,20 +199,22 @@ if __name__  == '__main__':
     eff_list = timm.list_models(filter='ef*')
     mobilenet = timm.list_models(filter='*mobilenet*')
     RegNet = timm.list_models(filter='*RegNet*')
-    ResNet = timm.list_models(filter='resnet*')
-
     resnet_list = timm.list_models(filter='resn*')
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'CNNDetection'
+    backbone = 'cnndetection'
     #backbone = resnet50(pretrained=False)
-    model = build_model(backbone=backbone, pretrained=True, num_classes=1, freeze_exclude=None)
+    model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     
     summary(model, input_size=(3,224,224))
 
+    
+    
+    
+    
     
     
     
