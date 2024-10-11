@@ -2,11 +2,16 @@
 
 pwd=$(cd $(dirname $0); pwd)
 echo pwd: $pwd
-#pip install -r requirements.txt
-backbone=${1:-'adof'}  # Set a default backbone if not provided
+
+used_backbone=${1:-'adof'}  # Set a default backbone if not provided
 gpu=${2:-'0'}  # Default to using GPU 0
 
-echo "The backbone is set to: $backbone"
+
+# Check for the use_comet flag
+use_comet_flag="${3:-}"
+
+
+echo "The backbone is set to: $used_backbone"
 echo "Using GPUs: $gpu"
 
 # Remove directories containing "ipynb" files
@@ -22,8 +27,7 @@ python train.py \
 --delr_freq 5 \
 --loss_freq 400 \
 --lr 0.0002 \
---niter 10 \
+--niter 30 \
 --blur_prob 0 --blur_sig 0 --jpg_prob 0 --jpg_method cv2 --jpg_qual 100 \
---gpu $gpu  \# Pass the GPU parameter
---backbone ${backbone}  \
---use_comet
+--backbone ${used_backbone} \
+--gpu $gpu  $use_comet_flag 

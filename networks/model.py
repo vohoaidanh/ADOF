@@ -177,7 +177,7 @@ def mean_filter_2d(input_tensor, kernel_size=3):
     batch_size, channels, height, width = input_tensor.size()
 
     # Define the mean filter kernel for 3 channels
-    kernel = torch.ones((1, 1, kernel_size, kernel_size)) / (kernel_size * kernel_size)
+    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
     
     kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
 

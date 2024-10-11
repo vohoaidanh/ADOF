@@ -1,4 +1,8 @@
 # Function to check if gdown is installed
+sudo apt-get update -y
+sudo apt-get install -y unzip -q
+sudo apt-get install -y zip -q
+
 check_gdown() {
     if ! command -v gdown &> /dev/null; then
         echo "gdown not found. Installing..."
@@ -31,9 +35,7 @@ if [[ -f trainset.zip ]]; then
     echo "Download complete. Extracting file.zip..."
     
     # Unzip the downloaded file
-    unzip trainset.zip -d temp_dir
-    mv temp_dir/* ./ForenSynths/
-    rmdir temp_dir
+    unzip trainset.zip -d ForenSynths_train
 
     # Check if unzip was successful
     if [[ $? -eq 0 ]]; then
@@ -51,16 +53,15 @@ fi
 
 #Test set https://drive.google.com/file/d/1bvGFZ-77Xcu3sK7Pq9CyUBBk8PACzmeB/view?usp=drive_link
 
-gdown https://drive.google.com/uc?id=1JBDx2BPVSoADxhLFMJpd8zSFQyD_SVvI -O testset.zip --continue
+gdown https://drive.google.com/uc?id=1bvGFZ-77Xcu3sK7Pq9CyUBBk8PACzmeB -O testset.zip --continue
 
 # Check if the download was successful
 if [[ -f testset.zip ]]; then
     echo "Download complete. Extracting file.zip..."
     
     # Unzip the downloaded file
-    unzip testset.zip -d temp_dir
-    mv temp_dir/* ./ForenSynths/test
-    rmdir temp_dir
+    mkdir -p ForenSynths_train/test
+    unzip testset.zip -d ForenSynths_train/test
 
     # Check if unzip was successful
     if [[ $? -eq 0 ]]; then
