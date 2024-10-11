@@ -12,7 +12,6 @@ cd ADOF  # Change to the directory name of the cloned repository
 chmod +x download_trainset.sh
 ./download_trainset.sh
 
-
 #Training
 chmod +x train.sh
-./train.sh
+./train.sh 'cnndetection' '0' # backbone, gpu_ids
