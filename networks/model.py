@@ -90,7 +90,22 @@ class SPPF(nn.Module):
         out = self.conv(out)
         out = self.bn1(out)
         return out
+
+def mean_filter_2d(input_tensor, kernel_size=3):
+    device = input_tensor.device
+    batch_size, channels, height, width = input_tensor.size()
+
+    # Define the mean filter kernel for 3 channels
+    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
     
+    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
+
+
+    output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
+    
+    return output
+
+
 class Backbone(nn.Module):
     def __init__(self, backbone):
         super(Backbone, self).__init__()
@@ -172,19 +187,6 @@ class Detector(nn.Module):
             else:
                 param.requires_grad = True
 
-def mean_filter_2d(input_tensor, kernel_size=3):
-    device = input_tensor.device
-    batch_size, channels, height, width = input_tensor.size()
-
-    # Define the mean filter kernel for 3 channels
-    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
-    
-    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
-
-
-    output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
-    
-    return output
 
 def build_model(**kwargs):
     model = Detector(**kwargs)

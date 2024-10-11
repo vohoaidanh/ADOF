@@ -5,10 +5,7 @@ echo pwd: $pwd
 
 used_backbone=${1:-'adof'}  # Set a default backbone if not provided
 gpu=${2:-'0'}  # Default to using GPU 0
-
-
-# Check for the use_comet flag
-use_comet_flag="${3:-}"
+use_comet_flag="${3:-}" # Check for the use_comet flag
 
 
 echo "The backbone is set to: $used_backbone"
@@ -19,7 +16,7 @@ find ${pwd}/dataset -type d -name "*ipynb*" -exec rm -r {} +
 echo ${pwd}/dataset 
 # Run the training script with specified parameters
 python train.py \
---name adof-${backbone}- \
+--name adof-${used_backbone}- \
 --dataroot ${pwd}/dataset/ForenSynths_train \
 --num_thread 2 \
 --classes car,cat,chair,horse \
