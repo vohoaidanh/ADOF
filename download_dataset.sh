@@ -20,7 +20,6 @@ echo pwd: $pwd
 mkdir dataset
 cd dataset
 
-
 # --proxy http://ip:port
 
 # Download the zip file from the Google Drive folder using gdown
