@@ -88,6 +88,19 @@ sin_kernel_2d.max()
 
 
 
+import numpy as np
 
+# Define two 3x3 matrices representing the noisy image (x) and the denoised image (y)
+x = np.array([[10, 12, 14],
+              [9,  11, 15],
+              [8,  10, 16]])
+
+y = np.array([[9,  11, 13],
+              [10, 12, 14],
+              [7,  11, 15]])
+
+# Calculate the 2D L2 norm (E) between x and y
+E = 0.5 * np.sum((x - y) ** 2)
+E
 
 

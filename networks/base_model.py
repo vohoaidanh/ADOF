@@ -12,6 +12,7 @@ class BaseModel(nn.Module):
         self.opt = opt
         self.total_steps = 0
         self.isTrain = opt.isTrain
+        self.continue_train = opt.continue_train
         self.lr = opt.lr
         self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
         self.device = torch.device('cuda:{}'.format(opt.gpu_ids[0])) if opt.gpu_ids else torch.device('cpu')
@@ -35,11 +36,11 @@ class BaseModel(nn.Module):
         print(f'Saving model {save_path}')
 
     # load models from the disk
-    def load_networks(self, epoch, checkpoints_dir=None):
+    def load_networks(self, epoch):
         load_filename = 'model_epoch_%s.pth' % epoch
         load_path = os.path.join(self.save_dir, load_filename)
-        if checkpoints_dir is not None:
-            load_path = os.path.join(checkpoints_dir, load_filename)
+        if self.continue_train:
+            load_path = os.path.join(self.opt.old_checkpoint)
 
         print('loading the model from %s' % load_path)
         # if you are using PyTorch newer than 0.4 (e.g., built from
@@ -50,7 +51,7 @@ class BaseModel(nn.Module):
 
         self.model.load_state_dict(state_dict['model'])
         self.total_steps = state_dict['total_steps']
-
+        self.optimizer.load_state_dict(state_dict['optimizer'])
         if self.isTrain and not self.opt.new_optim:
             self.optimizer.load_state_dict(state_dict['optimizer'])
             ### move optimizer state to GPU

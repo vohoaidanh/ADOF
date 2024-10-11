@@ -22,5 +22,6 @@ class TrainOptions(BaseOptions):
         # parser.add_argument('--model_path')
         # parser.add_argument('--no_resize', action='store_true')
         # parser.add_argument('--no_crop', action='store_true')
+        parser.add_argument('--old_checkpoint', type=str, default=None, help='models are saved here')
         self.isTrain = True
         return parser

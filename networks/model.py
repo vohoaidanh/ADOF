@@ -2,7 +2,6 @@
 
 import torch
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
@@ -110,7 +109,6 @@ class Detector(nn.Module):
         self.adof = ADOF
         self.adofcross = lambda x: x
         self.sppf = lambda x: x
-        # Tạo backbone từ timm
         self.c = 3
         if isinstance(backbone, str):
             if backbone.lower() == 'adof':
@@ -129,7 +127,10 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 #in_features = self.backbone.num_features
                 self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
-                
+            
+            elif backbone.lower() == 'cnndetection':
+                self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
+                self.adof = lambda x: x
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
@@ -184,13 +185,15 @@ if __name__  == '__main__':
     eff_list = timm.list_models(filter='ef*')
     mobilenet = timm.list_models(filter='*mobilenet*')
     RegNet = timm.list_models(filter='*RegNet*')
+    ResNet = timm.list_models(filter='resnet*')
+
     resnet_list = timm.list_models(filter='resn*')
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'adof'
+    backbone = 'CNNDetection'
     #backbone = resnet50(pretrained=False)
-    model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
+    model = build_model(backbone=backbone, pretrained=True, num_classes=1, freeze_exclude=None)
         
     print(model(torch.rand(2,3,224,224)))
     

@@ -173,4 +173,72 @@ kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
 # Expand the kernels to match the number of input channels
 kernel_x = kernel_x.expand(3, 1, 3, 3)
 kernel_y = kernel_y.expand(3, 1, 3, 3)
+##################################################
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+
+# Function to compute the power spectrum for a given image
+def compute_power_spectrum(image_array):
+    fft_image = np.fft.fft2(image_array)
+    fft_shift = np.fft.fftshift(fft_image)  # Shift the zero frequency component to the center
+    power_spectrum = np.abs(fft_shift)**1
+    return power_spectrum
+
+# Path to the folder containing the images
+folder_path = r'D:\Downloads\dataset\CNN_synth\gaugan\1_fake'  # Replace with your folder path
+
+# List to store power spectra of all images
+power_spectra_list = []
+
+# Loop over all images in the folder
+for filename in os.listdir(folder_path)[:300]:
+    if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):  # Check for image file formats
+        image_path = os.path.join(folder_path, filename)
+        
+        image = Image.open(image_path).convert('L')  # Convert to grayscale
+        image = image.crop((0, 0, 224, 224))  # Crop to a square based on the smallest dimension
+        image_array = np.array(image)
+        
+        # Compute power spectrum for this image
+        power_spectrum = compute_power_spectrum(image_array)
+        power_spectra_list.append(power_spectrum)
+
+# Compute the mean power spectrum across all images
+mean_power_spectrum = np.mean(np.array(power_spectra_list), axis=0)
+#normalized_mean_power_spectrum = (mean_power_spectrum - np.min(mean_power_spectrum)) / (np.max(mean_power_spectrum) - np.min(mean_power_spectrum))
+
+# Áp dụng log với một hệ số điều chỉnh để giảm độ sáng của tần số thấp
+log_power_spectrum = np.log1p(mean_power_spectrum)
+
+# Cắt và giới hạn giá trị (clipping) để tránh tần số thấp quá sáng
+clipped_log_power_spectrum = np.clip(log_power_spectrum, a_min=None, a_max=np.percentile(log_power_spectrum, 99))  # Giới hạn tại 99th percentile
+
+# Chuẩn hóa giá trị để tần số cao nổi bật hơn
+#normalized_spectrum = (clipped_log_power_spectrum - np.min(clipped_log_power_spectrum)) / (np.max(clipped_log_power_spectrum) - np.min(clipped_log_power_spectrum))
+
+# =============================================================================
+# # Hiển thị phổ công suất
+# plt.figure(figsize=(20,20))
+# plt.imshow(normalized_spectrum)
+# plt.title(folder_path)
+# plt.axis('off')
+# plt.show()
+# 
+# =============================================================================
+
+# Chuyển đổi ma trận thành một dãy các giá trị đơn lẻ
+flattened_spectrum = log_power_spectrum.flatten()
+
+# Vẽ biểu đồ histogram
+plt.figure(figsize=(10,10))
+plt.hist(flattened_spectrum, bins=200, color='blue', alpha=0.7)
+plt.title(folder_path)
+plt.xlabel("Log Power Spectrum")
+plt.ylabel("Frequency")
+plt.grid(True)
+plt.show()
+
+
 
