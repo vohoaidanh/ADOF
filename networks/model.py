@@ -91,20 +91,22 @@ class SPPF(nn.Module):
         out = self.bn1(out)
         return out
 
-def mean_filter_2d(input_tensor, kernel_size=3):
-    device = input_tensor.device
-    batch_size, channels, height, width = input_tensor.size()
-
-    # Define the mean filter kernel for 3 channels
-    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
-    
-    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
-
-
-    output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
-    
-    return output
-
+# =============================================================================
+# def mean_filter_2d(input_tensor, kernel_size=3):
+#     device = input_tensor.device
+#     batch_size, channels, height, width = input_tensor.size()
+# 
+#     # Define the mean filter kernel for 3 channels
+#     kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
+#     
+#     kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
+# 
+# 
+#     output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
+#     
+#     return output
+# 
+# =============================================================================
 
 class Backbone(nn.Module):
     def __init__(self, backbone):
@@ -131,22 +133,6 @@ class Detector(nn.Module):
             if backbone.lower() == 'adof':
                 self.backbone = resnet50(pretrained=False)
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-            
-            elif backbone.lower() == 'adofcross':
-                self.c = 6
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                self.backbone.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=2, padding=1, bias=False)
-                self.adofcross = ADOFCross
-            
-            elif backbone.lower() == 'adofsppf':
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                #in_features = self.backbone.num_features
-                self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
-            elif backbone.lower() == 'cnndetection':
-                self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
-                self.adof = mean_filter_2d
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
