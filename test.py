@@ -14,6 +14,14 @@ import json
 import numpy as np
 import random
 import random
+#######################
+from comet_ml import Experiment
+
+from train import log_comet_metric
+@log_comet_metric()
+def log_metric(value, step=None, epoch=None):
+    return value, step, epoch
+#######################
 def seed_torch(seed=1029):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -78,6 +86,21 @@ model.cuda()
 model.eval()
 log_data = {}  # Tạo dictionary để lưu log
 
+#############################################################
+experiment = None
+USE_COMET = opt.use_comet
+if USE_COMET:
+    experiment = Experiment(
+      api_key="MS89D8M6skI3vIQQvamYwDgEc",
+      project_name="adof",
+      workspace="danhvohoai2-gmail-com"
+    )
+    
+if experiment is not None:
+    opt_dict = vars(opt)
+    experiment.log_parameters(opt_dict)
+#############################################################
+
 for testSet in DetectionTests.keys():
     dataroot = DetectionTests[testSet]['dataroot']
     printSet(testSet)
@@ -104,8 +127,9 @@ for testSet in DetectionTests.keys():
             'r_acc': r_acc,
             'f_acc': f_acc
         }
-        test_results.append(result)
         
+        test_results.append()
+               
         print("({} {:12}) acc: {:.1f}; ap: {:.1f}; r_acc: {:.1f}; f_acc: {:.1f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
     print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
     # Lưu kết quả trung bình vào log
@@ -123,6 +147,9 @@ for testSet in DetectionTests.keys():
     output_filename = parent_folder + '_' + output_filename
     with open(output_filename, 'w') as json_file:
         json.dump(log_data, json_file, indent=4)
+        if USE_COMET:
+            experiment.log_asset(output_filename)
+
     
     print("Log saved to ", output_filename)
 
