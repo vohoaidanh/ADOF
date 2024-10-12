@@ -91,22 +91,6 @@ class SPPF(nn.Module):
         out = self.bn1(out)
         return out
 
-# =============================================================================
-# def mean_filter_2d(input_tensor, kernel_size=3):
-#     device = input_tensor.device
-#     batch_size, channels, height, width = input_tensor.size()
-# 
-#     # Define the mean filter kernel for 3 channels
-#     kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
-#     
-#     kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
-# 
-# 
-#     output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
-#     
-#     return output
-# 
-# =============================================================================
 
 class Backbone(nn.Module):
     def __init__(self, backbone):
@@ -119,67 +103,232 @@ class Backbone(nn.Module):
         features = features.view(-1, self.num_features)
         return features
 
-from networks.resnet import resnet50
+def conv3x3(in_planes, out_planes, stride=1):
+    """3x3 convolution with padding"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                     padding=1, bias=False)
 
-class Detector(nn.Module):
-    def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
-        super(Detector, self).__init__()
-        self.adof = ADOF
-        self.adofcross = lambda x: x
-        self.sppf = lambda x: x
-        # Tạo backbone từ timm
-        self.c = 3
-        if isinstance(backbone, str):
-            if backbone.lower() == 'adof':
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-            else:
-                self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
-        
-        elif isinstance(backbone, nn.Module):
-          # Sử dụng mô hình đã cho trực tiếp
-            self.backbone = backbone
-        else:
-            raise TypeError("backbone_name must be a string or a nn.Module instance")
-        
-        
-        in_features = self.backbone(torch.randn(1, self.c, 224, 224))
-        in_features = in_features.shape[1]
 
-        if isinstance(freeze_exclude, list):
-            self.freeze_layers(self.backbone, freeze_exclude)
-        
-        if num_features != 'auto':
-            in_features = int(num_features)
-        
-        self.classifier = nn.Linear(in_features, num_classes)
-        
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+
+class BasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(BasicBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+        self.stride = stride
+
     def forward(self, x):
-        x1 = self.adof(x)
-        x1 = self.sppf(x1)
-        if self.c == 6:
-            x2 = self.adofcross(x)
-            x1 = torch.cat((x1, x2), dim=1)
-            
-        features = self.backbone(x1)
-        output = self.classifier(features)
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+
+class Bottleneck(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = conv1x1(inplanes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = conv3x3(planes, planes, stride)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv1x1(planes, planes * self.expansion)
+        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+
+class ResNet(nn.Module):
+
+    def __init__(self, block, layers, num_classes=1, zero_init_residual=False):
+        super(ResNet, self).__init__()
         
-        return output
+        self.unfoldSize = 2
+        self.unfoldIndex = 0
+        assert self.unfoldSize > 1
+        assert -1 < self.unfoldIndex and self.unfoldIndex < self.unfoldSize*self.unfoldSize
+        self.adof = ADOF
+        self.attn = SelfAttention(in_channels=256)
+        self.inplanes = 64
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64 , layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        # self.fc1 = nn.Linear(512 * block.expansion, 1)
+        self.fc1 = nn.Linear(512, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
+                    nn.init.constant_(m.bn2.weight, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+
+        return nn.Sequential(*layers)
     
-    def freeze_layers(self, model, layers_to_freeze):
-        for name, param in model.named_parameters():
-            if any(layer in name for layer in layers_to_freeze):
-                param.requires_grad = False
-            else:
-                param.requires_grad = True
+    def _zoom(self,input_tensor, scale=0.75):
+        if scale==1:
+            return input_tensor
+        batch_size, channels, height, width = input_tensor.shape
+        
+        # Tính toán kích thước của crop (75% của height và width)
+        crop_height = int(scale * height)
+        crop_width = int(scale * width)
+        
+        # Tính toán tọa độ crop giữa ảnh
+        top = (height - crop_height) // 2
+        left = (width - crop_width) // 2
+        bottom = top + crop_height
+        right = left + crop_width
+        
+        # Thực hiện center crop
+        cropped_tensor = input_tensor[:, :, top:bottom, left:right]
+
+        resized_tensor = F.interpolate(cropped_tensor, size=(height, width), mode='bilinear', align_corners=False)
+        
+        return resized_tensor
+        
+ 
+    def forward(self, x):
+        x = [self._zoom(x, scale) for scale in [1, 0.75, 0.5]]
+        xs = []
+        for x_i in x:
+            x_i = self.adof(x_i)
+            x_i = self.conv1(x_i)
+            x_i = self.bn1(x_i)
+            x_i = self.relu(x_i)
+            x_i = self.maxpool(x_i)
+            x_i = self.layer1(x_i)
+            xs.append(x_i)
+        
+        x = self.attn(*xs)
+        x = self.layer2(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+
+        return x
+
+
+class SelfAttention(nn.Module):
+    def __init__(self, in_channels):
+        super(SelfAttention, self).__init__()
+        self.query_conv = nn.Conv2d(in_channels, in_channels // 8, kernel_size=1)
+        self.key_conv = nn.Conv2d(in_channels, in_channels // 8, kernel_size=1)
+        self.value_conv = nn.Conv2d(in_channels, in_channels, kernel_size=1)
+        self.gamma = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x, k, q):
+        batch_size, C, width, height = x.size()
+        # Tính Q, K, V
+        query = self.query_conv(q).view(batch_size, -1, width * height).permute(0, 2, 1)
+        #print('query:', query.shape)
+        key = self.key_conv(k).view(batch_size, -1, width * height)
+        #print('key:', key.shape)
+
+        value = self.value_conv(x).view(batch_size, -1, width * height)
+        #print('value:', value.shape)
+
+        # Tính attention map
+        attention = torch.bmm(query, key)
+        attention = torch.softmax(attention, dim=-1)
+
+        # Tính output
+        out = torch.bmm(value, attention.permute(0, 2, 1))
+        out = out.view(batch_size, C, width, height)
+
+        # Áp dụng trọng số gamma
+        out = self.gamma * out + x
+        return out
+
+def resnet50(pretrained=False, **kwargs):
+    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    return model
 
 
 def build_model(**kwargs):
-    model = Detector(**kwargs)
+    model = resnet50(**kwargs)
     return model
 
 if __name__  == '__main__':
     from torchsummary import summary
+    from torchvision.transforms import transforms
+    import matplotlib.pyplot as plt
+    from PIL import Image
+    t = transforms.ToTensor()
     all_model_list = timm.list_models()
 
     vit_list = timm.list_models(filter='vit*')
@@ -191,16 +340,18 @@ if __name__  == '__main__':
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'cnndetection'
+    #backbone = 'cnndetection'
     #backbone = resnet50(pretrained=False)
-    model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
-        
-    print(model(torch.rand(2,3,224,224)))
+    model = build_model(pretrained=False, num_classes=1)
+    
+    image_path = r"C:\Users\danhv\Downloads\upscale\Runway 2024-09-29T03_57_02.961Z Upscale Image Upscaled Image 1280 x 1280.jpg"  # Replace with your image path
+    image = Image.open(image_path)
+    image = image.resize((256,256))
+    image = t(image)
+    model(image.unsqueeze(0))
     
     summary(model, input_size=(3,224,224))
 
-    
-    
     
     
     

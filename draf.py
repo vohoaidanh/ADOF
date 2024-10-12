@@ -1,6 +1,7 @@
 from torchvision.models import resnet18
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class SelfAttention(nn.Module):
     def __init__(self, in_channels):
@@ -89,12 +90,88 @@ class ResNet18WithAttention(nn.Module):
         return x
 
 
+class Pyramid:
+    def __init__(self):
+        pass
+    
+    def forward(self, input_tensor, scale=0.75):
+        """
+        input_tensor: Tensor có kích thước (batch_size, channels, height, width)
+        Thực hiện center crop với kích thước 75% kích thước ảnh ban đầu và sau đó resize về kích thước ban đầu.
+        """
+        # Lấy kích thước ảnh từ tensor đầu vào
+        batch_size, channels, height, width = input_tensor.shape
+        
+        # Tính toán kích thước của crop (75% của height và width)
+        crop_height = int(scale * height)
+        crop_width = int(scale * width)
+        
+        # Tính toán tọa độ crop giữa ảnh
+        top = (height - crop_height) // 2
+        left = (width - crop_width) // 2
+        bottom = top + crop_height
+        right = left + crop_width
+        
+        # Thực hiện center crop
+        cropped_tensor = input_tensor[:, :, top:bottom, left:right]
+
+        # Thực hiện center crop bằng cách nội suy về kích thước crop
+        #cropped_tensor = F.interpolate(input_tensor, size=(crop_height, crop_width), mode='bilinear', align_corners=False)
+        
+        # Resize lại về kích thước ban đầu (height, width)
+        resized_tensor = F.interpolate(cropped_tensor, size=(height, width), mode='bilinear', align_corners=False)
+        
+        return resized_tensor
+
+def zoom(x, scale=0.75):
+    batch_size, channels, height, width = input_tensor.shape
+    
+    # Tính toán kích thước của crop (75% của height và width)
+    crop_height = int(scale * height)
+    crop_width = int(scale * width)
+    
+    # Tính toán tọa độ crop giữa ảnh
+    top = (height - crop_height) // 2
+    left = (width - crop_width) // 2
+    bottom = top + crop_height
+    right = left + crop_width
+    
+    # Thực hiện center crop
+    cropped_tensor = input_tensor[:, :, top:bottom, left:right]
+
+    # Thực hiện center crop bằng cách nội suy về kích thước crop
+    #cropped_tensor = F.interpolate(input_tensor, size=(crop_height, crop_width), mode='bilinear', align_corners=False)
+    
+    # Resize lại về kích thước ban đầu (height, width)
+    resized_tensor = F.interpolate(cropped_tensor, size=(height, width), mode='bilinear', align_corners=False)
+    
+    return resized_tensor
+    
+
+attn = nn.MultiheadAttention(embed_dim=28*28, num_heads=8)
+x = torch.rand(1,128,28*28)
+y = attn(x,x,x)
+y[1]
 modele = ResNet18WithAttention(num_classes=1)
 
 modele(torch.rand(1,3,224,224))
 
 
+# Load the image
+from PIL import Image
+from torchvision.transforms import transforms
+import matplotlib.pyplot as plt
+t = transforms.ToTensor()
+image_path = r"C:\Users\danhv\Downloads\upscale\530--n03196217_3951.png"# Replace with your image path
+image = Image.open(image_path)
+input_tensor = t(image)
+# Khởi tạo class
+center_crop = Pyramid()
 
+# Thực hiện crop và resize lại kích thước ban đầu
+output_tensor = center_crop.forward(input_tensor.unsqueeze(0),0.25)
+
+plt.imshow(output_tensor[0].permute(1,2,0))
 
 
 
