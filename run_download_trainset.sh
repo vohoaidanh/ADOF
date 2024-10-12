@@ -28,7 +28,7 @@ cd dataset
 
 # Download the zip file from the Google Drive folder using gdown
 #https://drive.google.com/file/d/1JBDx2BPVSoADxhLFMJpd8zSFQyD_SVvI/view?usp=drive_link
-gdown https://drive.google.com/uc?id=1JBDx2BPVSoADxhLFMJpd8zSFQyD_SVvI -O trainset.zip --continue
+gdown https://drive.google.com/uc?id=1JLdFyM7JnaUa8y4wBOwNGs3rn4qKH58Z -O trainset.zip --continue
 
 # Check if the download was successful
 if [[ -f trainset.zip ]]; then
@@ -53,7 +53,7 @@ fi
 
 #Test set https://drive.google.com/file/d/1bvGFZ-77Xcu3sK7Pq9CyUBBk8PACzmeB/view?usp=drive_link
 
-gdown https://drive.google.com/uc?id=1bvGFZ-77Xcu3sK7Pq9CyUBBk8PACzmeB -O testset.zip --continue
+gdown https://drive.google.com/uc?id=1-02FPvdTaQFDMatEvXAeKLCmnwW6RLx4 -O testset.zip --continue
 
 # Check if the download was successful
 if [[ -f testset.zip ]]; then
@@ -76,3 +76,10 @@ if [[ -f testset.zip ]]; then
 else
     echo "Download failed."
 fi
+
+#https://drive.google.com/file/d/1JLdFyM7JnaUa8y4wBOwNGs3rn4qKH58Z/view?usp=drive_link train 24000
+#https://drive.google.com/file/d/1-02FPvdTaQFDMatEvXAeKLCmnwW6RLx4/view?usp=drive_link test 200
+#https://drive.google.com/file/d/1JBDx2BPVSoADxhLFMJpd8zSFQyD_SVvI/view?usp=drive_link train 4 class
+
+
+

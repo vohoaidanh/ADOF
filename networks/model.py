@@ -2,12 +2,9 @@
 
 import torch
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
-
-import timm
 
 
 __all__ = ['build_model']
@@ -329,14 +326,14 @@ if __name__  == '__main__':
     import matplotlib.pyplot as plt
     from PIL import Image
     t = transforms.ToTensor()
-    all_model_list = timm.list_models()
+    #all_model_list = timm.list_models()
 
-    vit_list = timm.list_models(filter='vit*')
-    vgg_list = timm.list_models(filter='vgg*')
-    eff_list = timm.list_models(filter='ef*')
-    mobilenet = timm.list_models(filter='*mobilenet*')
-    RegNet = timm.list_models(filter='*RegNet*')
-    resnet_list = timm.list_models(filter='resn*')
+    #vit_list = timm.list_models(filter='vit*')
+    #vgg_list = timm.list_models(filter='vgg*')
+    #eff_list = timm.list_models(filter='ef*')
+    #mobilenet = timm.list_models(filter='*mobilenet*')
+    #RegNet = timm.list_models(filter='*RegNet*')
+    #resnet_list = timm.list_models(filter='resn*')
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
