@@ -183,7 +183,10 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1, zero_init_residual=False,backbone=None, num_features=None, freeze_exclude=None):
+    def __init__(self, block, layers, num_classes=1, 
+                 zero_init_residual=False,
+                 backbone=None, num_features=None, 
+                 freeze_exclude=None):
         super(ResNet, self).__init__()
         
         self.unfoldSize = 2
@@ -236,7 +239,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     
-    def _zoom(self,input_tensor, scale=0.75):
+    def _zoom(self,input_tensor, scale=1):
         if scale==1:
             return input_tensor
         batch_size, channels, height, width = input_tensor.shape
@@ -262,21 +265,34 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = [self._zoom(x, scale) for scale in [1, 0.75, 0.5]]
         xs = []
-        for x_i in x:
-            x_i = self.adof(x_i)
-            x_i = self.conv1(x_i)
-            x_i = self.bn1(x_i)
-            x_i = self.relu(x_i)
-            x_i = self.maxpool(x_i)
-            x_i = self.layer1(x_i)
-            xs.append(x_i)
+        for i, x_i in enumerate(x):
+            if i==0:
+                with torch.no_grad():
+                    x_i = self.adof(x_i)
+                    x_i = self.conv1(x_i)
+                    x_i = self.bn1(x_i)
+                    x_i = self.relu(x_i)
+                    x_i = self.maxpool(x_i)
+                    x_i = self.layer1(x_i)
+                    xs.append(x_i)
+            else:
+                x_i = self.adof(x_i)
+                x_i = self.conv1(x_i)
+                x_i = self.bn1(x_i)
+                x_i = self.relu(x_i)
+                x_i = self.maxpool(x_i)
+                x_i = self.layer1(x_i)
+                xs.append(x_i)
+        
+        
         
         x = self.attn(*xs)
+
         x = self.layer2(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-
+ 
         return x
 
 
@@ -287,6 +303,7 @@ class SelfAttention(nn.Module):
         self.key_conv = nn.Conv2d(in_channels, in_channels // 8, kernel_size=1)
         self.value_conv = nn.Conv2d(in_channels, in_channels, kernel_size=1)
         self.gamma = nn.Parameter(torch.zeros(1))
+        self.layer_norm = nn.LayerNorm([in_channels, 64, 64])  # Điều chỉnh kích thước nếu cần
 
     def forward(self, x, k, q):
         batch_size, C, width, height = x.size()
@@ -309,6 +326,7 @@ class SelfAttention(nn.Module):
 
         # Áp dụng trọng số gamma
         out = self.gamma * out + x
+        out = self.layer_norm(out)
         return out
 
 def resnet50(pretrained=False, **kwargs):
@@ -347,7 +365,7 @@ if __name__  == '__main__':
     image = t(image)
     model(image.unsqueeze(0))
     
-    summary(model, input_size=(3,224,224))
+    #summary(model, input_size=(3,224,224))
 
     
     

@@ -10,8 +10,8 @@ REPO_URL="https://github.com/vohoaidanh/ADOF.git"  # Replace with your repositor
 # Clone the specific branch
 git clone -b $BRANCH_NAME $REPO_URL
 
-
 #install packages
+
 sudo apt-get update -y
 sudo apt-get install -y libgl1-mesa-glx -q
 check_gdown() {
@@ -25,19 +25,18 @@ check_gdown() {
 }
 check_gdown
 
-cd ADOF  # Change to the directory name of the cloned repository
-pip install -r ./requirements.txt
+pip install -r ./ADOF/requirements.txt
 
 #Load dataset
-chmod +x ./download_trainset.sh
-sed -i 's/\r//' ./download_trainset.sh
+chmod +x ./ADOF/download_trainset.sh
+sed -i 's/\r//' ./ADOF/download_trainset.sh
 
 chmod +x run_dowload_testset.sh
-sed -i 's/\r//' ./run_dowload_testset.sh
+sed -i 's/\r//' ./ADOF/run_dowload_testset.sh
 
 #Training
 chmod +x ./run_train.sh
-sed -i 's/\r//' ./run_train.sh
+sed -i 's/\r//' ./ADOF/run_train.sh
 #./train.sh 'cnndetection' '0' '--use_comet' # backbone, gpu_ids, use_comet
 
 

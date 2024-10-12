@@ -3,7 +3,7 @@
 pwd=$(cd $(dirname $0); pwd)
 echo pwd: $pwd
 
-used_backbone=${1:-'adof'}  # Set a default backbone if not provided
+used_backbone=${1:-'adofattention'}  # Set a default backbone if not provided
 gpu=${2:-'0'}  # Default to using GPU 0
 use_comet_flag="${3:-}" # Check for the use_comet flag
 
