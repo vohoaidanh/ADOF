@@ -4,7 +4,7 @@
 
 
 # Load repository
-BRANCH_NAME="exp/backbones"  # Replace with your branch name
+BRANCH_NAME="exp/pyramid"  # Replace with your branch name
 REPO_URL="https://github.com/vohoaidanh/ADOF.git"  # Replace with your repository URL
 
 # Clone the specific branch
