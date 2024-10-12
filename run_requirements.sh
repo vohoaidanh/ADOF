@@ -9,7 +9,6 @@ REPO_URL="https://github.com/vohoaidanh/ADOF.git"  # Replace with your repositor
 
 # Clone the specific branch
 git clone -b $BRANCH_NAME $REPO_URL
-cd ADOF  # Change to the directory name of the cloned repository
 
 
 #install packages
@@ -25,17 +24,19 @@ check_gdown() {
     fi
 }
 check_gdown
-pip install -r requirements.txt
+
+cd ADOF  # Change to the directory name of the cloned repository
+pip install -r ./requirements.txt
 
 #Load dataset
-chmod +x download_trainset.sh
+chmod +x ./download_trainset.sh
 sed -i 's/\r//' ./download_trainset.sh
 
 chmod +x run_dowload_testset.sh
 sed -i 's/\r//' ./run_dowload_testset.sh
 
 #Training
-chmod +x run_train.sh
+chmod +x ./run_train.sh
 sed -i 's/\r//' ./run_train.sh
 #./train.sh 'cnndetection' '0' '--use_comet' # backbone, gpu_ids, use_comet
 

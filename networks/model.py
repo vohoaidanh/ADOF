@@ -183,7 +183,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1, zero_init_residual=False):
+    def __init__(self, block, layers, num_classes=1, zero_init_residual=False,backbone=None, num_features=None, freeze_exclude=None):
         super(ResNet, self).__init__()
         
         self.unfoldSize = 2
@@ -349,13 +349,5 @@ if __name__  == '__main__':
     
     summary(model, input_size=(3,224,224))
 
-    
-    
-    
-    
-    
-    
-    
-    
     
     
