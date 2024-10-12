@@ -6,6 +6,7 @@ from PIL import Image
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from torchvision.transforms import ToPILImage
 
 def mean_filter_2d(input_tensor, kernel_size=5):
     device = input_tensor.device
@@ -24,13 +25,21 @@ def mean_filter_2d(input_tensor, kernel_size=5):
 # image = torch.randn(1, 1, 256, 256)  # Một ảnh ngẫu nhiên kích thước 256x256
 
 t = transforms.ToTensor()
+kernel_size = 3
+
 # Load the image
 image_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_real.png"# Replace with your image path
 image = Image.open(image_path)
 img_arr = np.asarray(image)
 a= t(image).unsqueeze(0)
-a = mean_filter_2d(a, kernel_size=7)
-x = a[0][0][128,:]
+a = mean_filter_2d(a, kernel_size=kernel_size)
+
+to_pil = ToPILImage()
+img = to_pil(a.squeeze(0))
+img.save("ffhq_real_filter_3.png")
+
+
+x = a[0][0][:,100]*255
 
 fig, ax = plt.subplots(figsize=(20, 16))  # Set the desired figure size
 # Set title and axis labels with increased font size
@@ -40,19 +49,23 @@ fig, ax = plt.subplots(figsize=(20, 16))  # Set the desired figure size
 ax.tick_params(axis='both', which='major', labelsize=25)  # Major ticks font size
 
 # Plot the two graphs
-ax.plot(x, label='Real', color='b')  # First graph
+ax.plot(x, label='(1)', color='r')  # First graph
+ax.text(0.85, 0.05, f"Kernel size: ({kernel_size}x{kernel_size})",
+        transform=ax.transAxes, fontsize=30, color="black", ha="center", va="center", bbox=dict(facecolor='white', alpha=0.6))
+
 
 # Load the image
 image_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_fake_4_small.png"  # Replace with your image path
 image = Image.open(image_path)
 img_arr = np.asarray(image)
 a= t(image).unsqueeze(0)
-a = mean_filter_2d(a, kernel_size=7)
-x = a[0][0][128,:]
+a = mean_filter_2d(a, kernel_size=kernel_size)
+x = a[0][0][:,100]*255
 
-ax.plot(x, label='Fake', color='r',linestyle='-',  alpha=0.9)  # Second graph
+ax.plot(x, label='(2)', color='g',linestyle='-',  alpha=0.9)  # Second graph
 
 ax.legend(fontsize=25)  # Display the legend with specified font size
+
 
 
 ###########################
