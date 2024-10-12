@@ -2,8 +2,6 @@
 
 #./script.sh True
 
-download_dataset="${1:-False}"
-
 
 # Load repository
 BRANCH_NAME="exp/backbones"  # Replace with your branch name
@@ -30,18 +28,15 @@ check_gdown
 pip install -r requirements.txt
 
 #Load dataset
-if [[ "$download_dataset" == "True" ]]; then
-    chmod +x download_trainset.sh
-    sed -i 's/\r//' ./download_trainset.sh
-    ./download_trainset.sh
-else
-    echo "Skipping dataset download."
-fi
+chmod +x download_trainset.sh
+sed -i 's/\r//' ./download_trainset.sh
 
+chmod +x run_dowload_testset.sh
+sed -i 's/\r//' ./run_dowload_testset.sh
 
 #Training
-chmod +x train.sh
-sed -i 's/\r//' ./train.sh
-./train.sh 'cnndetection' '0' '--use_comet' # backbone, gpu_ids, use_comet
+chmod +x run_train.sh
+sed -i 's/\r//' ./run_train.sh
+#./train.sh 'cnndetection' '0' '--use_comet' # backbone, gpu_ids, use_comet
 
 

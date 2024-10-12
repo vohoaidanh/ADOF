@@ -91,7 +91,7 @@ class SPPF(nn.Module):
         out = self.bn1(out)
         return out
 
-def mean_filter_2d(input_tensor, kernel_size=3):
+def mean_filter_2d(input_tensor, kernel_size=5):
     device = input_tensor.device
     batch_size, channels, height, width = input_tensor.size()
 
@@ -99,7 +99,6 @@ def mean_filter_2d(input_tensor, kernel_size=3):
     kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
     
     kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
-
 
     output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
     

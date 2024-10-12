@@ -3,14 +3,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
+import torch
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+
+def mean_filter_2d(input_tensor, kernel_size=5):
+    device = input_tensor.device
+    batch_size, channels, height, width = input_tensor.size()
+
+    # Define the mean filter kernel for 3 channels
+    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
+    
+    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
+    pad = (kernel_size-1)//2
+    output = F.conv2d(input_tensor, kernel, padding=pad, groups=channels)
+    
+    return output
+
+# Ví dụ sử dụng
+# image = torch.randn(1, 1, 256, 256)  # Một ảnh ngẫu nhiên kích thước 256x256
+
+t = transforms.ToTensor()
 # Load the image
-image_path = r"C:\Users\danhv\Downloads\upscale\530--n03196217_3951.png"# Replace with your image path
+image_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_real.png"# Replace with your image path
 image = Image.open(image_path)
-
-
-
 img_arr = np.asarray(image)
-x = img_arr[100,:,0]
+a= t(image).unsqueeze(0)
+a = mean_filter_2d(a, kernel_size=7)
+x = a[0][0][128,:]
 
 fig, ax = plt.subplots(figsize=(20, 16))  # Set the desired figure size
 # Set title and axis labels with increased font size
@@ -23,17 +43,16 @@ ax.tick_params(axis='both', which='major', labelsize=25)  # Major ticks font siz
 ax.plot(x, label='Real', color='b')  # First graph
 
 # Load the image
-image_path = r"C:\Users\danhv\Downloads\upscale\Runway 2024-09-29T03_57_02.961Z Upscale Image Upscaled Image 1280 x 1280.jpg"  # Replace with your image path
+image_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\ffhq_fake_4_small.png"  # Replace with your image path
 image = Image.open(image_path)
-image = image.resize((256,256))
-
-
 img_arr = np.asarray(image)
-x = img_arr[100,:,0]
-ax.plot(x, label='Fake', color='r',linestyle='--',  alpha=0.9)  # Second graph
+a= t(image).unsqueeze(0)
+a = mean_filter_2d(a, kernel_size=7)
+x = a[0][0][128,:]
+
+ax.plot(x, label='Fake', color='r',linestyle='-',  alpha=0.9)  # Second graph
 
 ax.legend(fontsize=25)  # Display the legend with specified font size
-
 
 
 ###########################

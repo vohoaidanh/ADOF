@@ -18,7 +18,7 @@ echo ${pwd}/dataset
 python train.py \
 --name adof-${used_backbone}- \
 --dataroot ${pwd}/dataset/ForenSynths_train \
---num_thread 2 \
+--num_thread 8 \
 --classes car,cat,chair,horse \
 --batch_size 64 \
 --delr_freq 5 \
