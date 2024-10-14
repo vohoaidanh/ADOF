@@ -8,9 +8,39 @@ from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 from functools import partial
 import timm
+from kymatio.torch import Scattering2D
 
 
 __all__ = ['build_model']
+
+class Scattering(nn.Module):
+    def __init__(self, J, shape, L):
+        super(Scattering, self).__init__()
+        self.L = L
+        self.J = J
+        self.shape = shape
+        self.scattering = Scattering2D(J=self.J, shape=self.shape, L=self.L)
+        self.inchannel = self._getsize()        
+        #self.bn = nn.BatchNorm2d(3)
+        #self.conv = nn.Conv2d(in_channels=inchannel, out_channels=3, kernel_size=1)
+
+    def _getsize(self):
+        bz, c, size, _, _ = self.scattering(torch.rand(1,3,self.shape[0],self.shape[1])).shape
+        return (size-1)*c
+    
+    def forward(self,x):
+        x = self.scattering(x)
+        x = x.permute(0,2,1,3,4)
+        x = x[:, 1:, :, :, :]
+        x = x.contiguous()
+
+        bz, n, c, w, h = x.shape
+        x = x.view(bz, n*c, w, h)
+        #x = self.conv(x)
+        #x = self.bn(x)
+
+        return x
+        
 
 def ADOF(input_tensor):
     device = input_tensor.device
@@ -145,7 +175,15 @@ class Detector(nn.Module):
                 self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
             elif backbone.lower() == 'cnndetection':
                 self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
-                self.adof = partial(mean_filter_2d, kernel_size=5)
+                self.adof = partial(mean_filter_2d, kernel_size=7)
+            elif backbone.lower() == 'scattering':
+                self.backbone = resnet50(pretrained=False)
+                #self.adof = Scattering2D(J=2, shape=(224,224), L=8)
+                self.adof = Scattering(J=2, shape=(224,224), L=4)
+                self.c = self.adof.inchannel
+                self.backbone.conv1 = nn.Conv2d(self.c, 64, kernel_size=3, stride=2, padding=1, bias=False)
+
+
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
@@ -193,6 +231,10 @@ def build_model(**kwargs):
 
 if __name__  == '__main__':
     from torchsummary import summary
+    from torchvision.transforms import transforms
+    from PIL import Image
+    import matplotlib.pyplot as plt
+    t = transforms.ToTensor()
     all_model_list = timm.list_models()
 
     vit_list = timm.list_models(filter='vit*')
@@ -204,23 +246,78 @@ if __name__  == '__main__':
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
     
-    backbone = 'cnndetection'
+    backbone = 'scattering'
     #backbone = resnet50(pretrained=False)
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
-        
-    print(model(torch.rand(2,3,224,224)))
-    
-    summary(model, input_size=(3,224,224))
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    model.adof(torch.rand(2,3,224,224)).shape
+    print(model(torch.rand(2,3,224,224)))
+# =============================================================================
+#     b =  a(torch.rand(2,3,224,224))
+#     #summary(model, input_size=(3,224,224))
+# 
+#     #x = torch.rand(1,3,224,224)
+#     #mean_filter_2d(x,kernel_size=7).shape
+#     
+#     img = Image.open(r"C:\Users\danhv\Downloads\ffhq_real.png")
+#     img = img.resize((224,224))
+#     img = t(img)    
+#     
+#     scattering = Scattering2D(J=2, shape=(224,224), L=3)
+#     b=scattering(img.unsqueeze(0))
+#         
+#     c = b.permute(0,2,1,3,4)
+#     c = c[:,1:,:,:]
+#     plt.imshow(c[0][0].permute(1,2,0))    
+#     
+#     for i in range(0,16):
+#         plt.imshow(b[0][1][i])
+#         plt.show()
+#     
+#     i=10
+#     plt.imshow(255 * c[i]/c[i].max()*(c[i].max()-c[i].min()))
+#     
+#     d = c[1]
+#     for _ in range(2,16):
+#         d = d+c[i]
+#     
+#     plt.imshow(10*d)
+#    
+#     e = (d-d.min())/(d.max()-d.min())*255
+#     e = e.numpy()
+#     e = np.asarray(e, dtype='uint8')
+#     plt.imshow(e)
+#     
+#     e = c.squeeze(0)
+# 
+#     e1 = e.mean(dim=1)
+#   
+#     s = Scattering(J=2, shape=(224,224), L = 8)
+#     b = s(img.unsqueeze(0))
+#     for i in b[0]:
+#         plt.imshow(i.detach().numpy() )
+#         plt.show()
+#         print(i.min(), i.max())
+# 
+#     b.min()
+# 
+#     s = Scattering2D(J=2, shape=(224,224), L=3)
+#     s(torch.rand(1,3,224,224)).shape
+# 
+#     
+#      model = resnet50(pretrained=False, num_classes=1)
+#       
+#      model.conv1 = nn.Conv2d(72, 64, kernel_size=3, stride=2, padding=1, bias=False)
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+#       
+# =============================================================================
