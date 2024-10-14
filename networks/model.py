@@ -6,7 +6,7 @@ import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
-
+from functools import partial
 import timm
 
 
@@ -145,7 +145,7 @@ class Detector(nn.Module):
                 self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
             elif backbone.lower() == 'cnndetection':
                 self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
-                self.adof = mean_filter_2d
+                self.adof = partial(mean_filter_2d, kernel_size=5)
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
