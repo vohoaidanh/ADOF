@@ -181,9 +181,9 @@ if __name__  == '__main__':
     resnet_list = timm.list_models(filter='resn*')
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
-    backbone = 'scattering'
+    backbone = 'resnet18'
     #backbone = resnet50(pretrained=False)
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
-    model.adof(torch.rand(2,3,224,224)).shape
+    model.preprocess(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
 
