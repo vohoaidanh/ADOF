@@ -7,7 +7,7 @@ import json
 # Define regex pattern to extract all the data columns
 pattern = r"\((\d+)\s+(\w+)\s+\)\s+acc:\s([\d.]+);\s+ap:\s([\d.]+);\s+r_acc:\s([\d.]+);\s+f_acc:\s([\d.]+)"
 
-file_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\origin-resnet18-carReal-horseFake.txt"  # Thay thế bằng đường dẫn tới file của bạn
+file_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\adof-resnet18-carReal-horseFake.txt"  # Thay thế bằng đường dẫn tới file của bạn
 with open(file_path, 'r') as file:
     input_text = file.read()
 
