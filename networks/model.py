@@ -8,39 +8,10 @@ from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 from functools import partial
 import timm
-from kymatio.torch import Scattering2D
 
 
 __all__ = ['build_model']
-
-class Scattering(nn.Module):
-    def __init__(self, J, shape, L):
-        super(Scattering, self).__init__()
-        self.L = L
-        self.J = J
-        self.shape = shape
-        self.scattering = Scattering2D(J=self.J, shape=self.shape, L=self.L)
-        self.inchannel = self._getsize()        
-        #self.bn = nn.BatchNorm2d(3)
-        #self.conv = nn.Conv2d(in_channels=inchannel, out_channels=3, kernel_size=1)
-
-    def _getsize(self):
-        bz, c, size, _, _ = self.scattering(torch.rand(1,3,self.shape[0],self.shape[1])).shape
-        return (size-1)*c
-    
-    def forward(self,x):
-        x = self.scattering(x)
-        x = x.permute(0,2,1,3,4)
-        x = x[:, 1:, :, :, :]
-        x = x.contiguous()
-
-        bz, n, c, w, h = x.shape
-        x = x.view(bz, n*c, w, h)
-        #x = self.conv(x)
-        #x = self.bn(x)
-
-        return x
-        
+       
 
 def ADOF(input_tensor):
     device = input_tensor.device
@@ -160,30 +131,6 @@ class Detector(nn.Module):
             if backbone.lower() == 'adof':
                 self.backbone = resnet50(pretrained=False)
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-            
-            elif backbone.lower() == 'adofcross':
-                self.c = 6
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                self.backbone.conv1 = nn.Conv2d(6, 64, kernel_size=3, stride=2, padding=1, bias=False)
-                self.adofcross = ADOFCross
-            
-            elif backbone.lower() == 'adofsppf':
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                #in_features = self.backbone.num_features
-                self.sppf = SPPF(in_channels=self.c, out_channels=self.c)
-            elif backbone.lower() == 'cnndetection':
-                self.backbone = timm.create_model('resnet50', pretrained=pretrained, num_classes=0)
-                self.adof = partial(mean_filter_2d, kernel_size=7)
-            elif backbone.lower() == 'scattering':
-                self.backbone = resnet50(pretrained=False)
-                #self.adof = Scattering2D(J=2, shape=(224,224), L=8)
-                self.adof = Scattering(J=2, shape=(224,224), L=4)
-                self.c = self.adof.inchannel
-                self.backbone.conv1 = nn.Conv2d(self.c, 64, kernel_size=3, stride=2, padding=1, bias=False)
-
-
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
