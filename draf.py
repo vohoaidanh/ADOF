@@ -20,7 +20,7 @@ x_vals = np.linspace(-10, 10, 20)
 y_vals = polynomial(x_vals)
 
 plt.plot(x, y, 'ro', label='Dữ liệu')
-plt.plot(x_vals, y_vals, label='Đa thức nội suy')
+plt.plot(x_vals, y_vals, label='Đa thức nội suy .')
 plt.legend()
 plt.show()
 
