@@ -44,9 +44,10 @@ def seed_torch(seed=1029):
 #└── test/
 #    └── [...]
 
-vals = ['progan', 'stylegan', 'stylegan2', 'biggan', 'cyclegan', 'stargan', 'gaugan', 'deepfake']
-multiclass = [1, 1, 1, 0, 1, 0, 0, 0]
-
+#vals = ['progan', 'stylegan', 'stylegan2', 'biggan', 'cyclegan', 'stargan', 'gaugan', 'deepfake']
+#multiclass = [1, 1, 1, 0, 1, 0, 0, 0]
+vals = ['car', 'cat', 'chair', 'horse']
+multiclass = [0, 0, 0, 0]
 
 def get_val_opt():
     val_opt = TrainOptions().parse(print_options=False)
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     #############################################################
     
     seed_torch(100)
-    Testdataroot = os.path.join(opt.dataroot, 'test')
+    Testdataroot = os.path.join(opt.dataroot, 'test/progan')
     opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.train_split)
     Logger(os.path.join(opt.checkpoints_dir, opt.name, 'log.log'))
     print('  '.join(list(sys.argv)) )
@@ -122,7 +123,7 @@ if __name__ == '__main__':
             Testopt.no_crop = False
             acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
             accs.append(acc);aps.append(ap)
-            print("({} {:12}) acc: {:.1f}; ap: {:.1f}; r_acc: {:.1f}; f_acc: {:.1f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
+            print("({} {:12}) acc: {:.4f}; ap: {:.4f}; r_acc: {:.4f}; f_acc: {:.4f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
         
             # Log the metrics for Comet
             #experiment.log_metric(f"test/acc_{val}", acc * 100)
@@ -130,7 +131,7 @@ if __name__ == '__main__':
             #experiment.log_metric(f"test/r_acc_{val}", r_acc)
             #experiment.log_metric(f"test/f_acc_{val}", f_acc)
         
-        print("({} {:10}) acc: {:.1f}; ap: {:.1f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
+        print("({} {:10}) acc: {:.4f}; ap: {:.4f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
      
         # Log the mean values
