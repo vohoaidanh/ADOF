@@ -1,6 +1,7 @@
 #!ls -l /root/.cache/huggingface/hub/
 
 import torch
+import torch.fft
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 from torch.nn import functional as F
@@ -8,39 +9,52 @@ from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 from functools import partial
 import timm
-from kymatio.torch import Scattering2D
 
 
 __all__ = ['build_model']
+import torch
+import torch.fft
 
-class Scattering(nn.Module):
-    def __init__(self, J, shape, L):
-        super(Scattering, self).__init__()
-        self.L = L
-        self.J = J
-        self.shape = shape
-        self.scattering = Scattering2D(J=self.J, shape=self.shape, L=self.L)
-        self.inchannel = self._getsize()        
-        #self.bn = nn.BatchNorm2d(3)
-        #self.conv = nn.Conv2d(in_channels=inchannel, out_channels=3, kernel_size=1)
+def highpass_filter(image_tensor: torch.Tensor, cutoff_percent: float) -> torch.Tensor:
+    """
+    Preprocess a tensor image by converting it to the frequency domain, applying a high-frequency cutoff,
+    and converting it back to the spatial domain.
 
-    def _getsize(self):
-        bz, c, size, _, _ = self.scattering(torch.rand(1,3,self.shape[0],self.shape[1])).shape
-        return (size-1)*c
+    Parameters:
+    - image_tensor (torch.Tensor): Input image tensor of shape (bz, c, 224, 224).
+    - cutoff_percent (float): Percentage of high-frequency components to keep (0 to 100).
+
+    Returns:
+    - torch.Tensor: The processed image tensor in the spatial domain.
+    """
+    # Ensure the input is in the correct shape (bz, c, 224, 224)
+    assert image_tensor.ndim == 4, "Image tensor should be 4D (bz, c, 224, 224)."
     
-    def forward(self,x):
-        x = self.scattering(x)
-        x = x.permute(0,2,1,3,4)
-        x = x[:, 1:, :, :, :]
-        x = x.contiguous()
+    bz, c, h, w = image_tensor.shape
+    
+    # Perform 2D FFT on each image channel
+    fft_image = torch.fft.fft2(image_tensor, dim=(-2, -1))
+    fft_image_shifted = torch.fft.fftshift(fft_image, dim=(-2, -1))  # Shift zero freq component to the center
+    
+    # Create a mask to remove low frequencies and keep high frequencies
+    cutoff = cutoff_percent / 100.0
+    center_h, center_w = h // 2, w // 2
+    cutoff_h, cutoff_w = int((1 - cutoff) * h // 2), int((1 - cutoff) * w // 2)
 
-        bz, n, c, w, h = x.shape
-        x = x.view(bz, n*c, w, h)
-        #x = self.conv(x)
-        #x = self.bn(x)
-
-        return x
-        
+    # Start with a mask that keeps everything (high frequencies included)
+    mask = torch.ones_like(fft_image, dtype=torch.bool)
+    
+    # Remove the low frequencies in the center based on cutoff
+    mask[:, :, center_h-cutoff_h:center_h+cutoff_h, center_w-cutoff_w:center_w+cutoff_w] = False
+    
+    # Apply the mask: Keep only high frequencies
+    fft_image_filtered = fft_image_shifted * mask
+    
+    # Shift back and perform inverse FFT to return to spatial domain
+    fft_image_unshifted = torch.fft.ifftshift(fft_image_filtered, dim=(-2, -1))
+    image_filtered = torch.fft.ifft2(fft_image_unshifted, dim=(-2, -1)).real
+    
+    return image_filtered
 
 def ADOF(input_tensor):
     device = input_tensor.device
@@ -130,7 +144,8 @@ class Detector(nn.Module):
                 self.preprocess = ADOF
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
-        
+                self.preprocess = partial(highpass_filter, cutoff_percent=50)
+
         elif isinstance(backbone, nn.Module):
           # Sử dụng mô hình đã cho trực tiếp
             self.backbone = backbone
@@ -186,4 +201,36 @@ if __name__  == '__main__':
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
     model.preprocess(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
+    
+    
+    img = Image.open(r"C:\Users\danhv\Downloads\ffhq_real.png")
+    img = t(img)
+    img = img.unsqueeze(0)
+    
+    out = highpass_filter(img, cutoff_percent=50)[0].permute(1,2,0)
+    plt.imshow(100*out)
+    
+    out_100 = highpass_filter(img, cutoff_percent=10)[0].permute(1,2,0)
+    out_75 = highpass_filter(img, cutoff_percent=75)[0].permute(1,2,0)
+    out_30 = highpass_filter(img, cutoff_percent=30)[0].permute(1,2,0)
+    
+    torch.sum(img[0].permute(1,2,0) - out_30)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+
+
+
 

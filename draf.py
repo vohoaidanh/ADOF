@@ -104,3 +104,122 @@ E = 0.5 * np.sum((x - y) ** 2)
 E
 
 
+import re
+import json
+
+# Input string mimicking the content of a file
+input_text = """
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_15.pth
+ Epoch 15 : 2024_10_17_09_02_16 --> 2024_10_17_09_03_11
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_last.pth
+(Val @ epoch 15) acc: 1.0; ap: 1.0
+*************************
+2024_10_17_09_03_12
+(0 car         ) acc: 99.8; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(1 cat         ) acc: 99.2; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(2 chair       ) acc: 99.5; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(3 horse       ) acc: 98.0; ap: 99.7; r_acc: 1.0; f_acc: 1.0
+(4 Mean      ) acc: 99.1; ap: 99.9
+*************************
+2024_10_17_09_03_18
+2024_10_17_09_03_36 Train loss: 0.002707220846787095 at step: 2300 lr 0.00014580000000000002
+2024_10_17_09_03_55 Train loss: 0.0005876213544979692 at step: 2350 lr 0.00014580000000000002
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_16.pth
+ Epoch 16 : 2024_10_17_09_03_18 --> 2024_10_17_09_04_13
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_last.pth
+(Val @ epoch 16) acc: 1.0; ap: 1.0
+*************************
+2024_10_17_09_04_14
+(0 car         ) acc: 99.8; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(1 cat         ) acc: 98.8; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(2 chair       ) acc: 99.2; ap: 100.0; r_acc: 1.0; f_acc: 1.0
+(3 horse       ) acc: 97.5; ap: 99.8; r_acc: 1.0; f_acc: 1.0
+(4 Mean      ) acc: 98.8; ap: 99.9
+*************************
+2024_10_17_09_04_20
+2024_10_17_09_04_22 Train loss: 0.007870160043239594 at step: 2400 lr 0.00014580000000000002
+2024_10_17_09_04_41 Train loss: 0.00630034226924181 at step: 2450 lr 0.00014580000000000002
+2024_10_17_09_05_00 Train loss: 0.00909484177827835 at step: 2500 lr 0.00014580000000000002
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_17.pth
+ Epoch 17 : 2024_10_17_09_04_20 --> 2024_10_17_09_05_15
+Saving model ./checkpoints/adof-carReal-carFake-resnet18-2024_10_17_08_46_38/model_epoch_last.pth
+(Val @ epoch 17) acc: 1.0; ap: 1.0
+"""
+
+# Define regex pattern to extract all the data columns
+pattern = r"\((\d+)\s+(\w+)\s+\)\s+acc:\s([\d.]+);\s+ap:\s([\d.]+);\s+r_acc:\s([\d.]+);\s+f_acc:\s([\d.]+)"
+
+file_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\origin-resnet18-carReal-horseFake.txt"  # Thay thế bằng đường dẫn tới file của bạn
+with open(file_path, 'r') as file:
+    input_text = file.read()
+
+
+# Find all matches using regex
+matches = re.findall(pattern, input_text)
+
+# Create a list of dictionaries
+data_list = []
+for match in matches:
+    data_dict = {
+        #"index": int(match[0]),
+        "name": match[1],
+        "acc": float(match[2]),
+        "ap": float(match[3]),
+        "r_acc": float(match[4]),
+        "f_acc": float(match[5])
+    }
+    data_list.append(data_dict)
+
+# Convert the list of dictionaries to JSON
+json_data = json.dumps(data_list, indent=4)
+parsed_data = json.loads(json_data)
+
+# Print the resulting JSON
+print(json_data)
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+data = parsed_data[-4:]
+# Extract class names and values for r_acc and f_acc
+classes = [item['name'] for item in data]
+r_acc_values = [item['r_acc'] for item in data]
+f_acc_values = [item['f_acc'] for item in data]
+
+# Create bar chart
+x = np.arange(len(classes))  # the label locations
+width = 0.2  # the width of the bars
+
+fig, ax = plt.subplots(figsize=(8,6))
+rects1 = ax.bar(x - width/2, r_acc_values, width, label='r_acc')
+rects2 = ax.bar(x + width/2, f_acc_values, width, label='f_acc')
+
+# Add some text for labels, title and axes ticks
+ax.set_xlabel('Classes', fontsize=14)
+ax.set_ylabel('Values', fontsize=14)
+ax.set_title('(4)', fontsize=18)
+ax.set_xticks(x)
+ax.set_xticklabels(classes)
+ax.legend()
+ax.set_ylim(0, 1.2)  # Limit between 0 and 1.2 for better visualization
+ax.tick_params(axis='both', which='major', labelsize=14)  # Set font size for both axes
+
+# Show the plot
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
