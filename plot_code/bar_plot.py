@@ -7,7 +7,7 @@ import json
 # Define regex pattern to extract all the data columns
 pattern = r"\((\d+)\s+(\w+)\s+\)\s+acc:\s([\d.]+);\s+ap:\s([\d.]+);\s+r_acc:\s([\d.]+);\s+f_acc:\s([\d.]+)"
 
-file_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\adof-resnet18-carReal-horseFake.txt"  # Thay thế bằng đường dẫn tới file của bạn
+file_path = r"D:\K32\do_an_tot_nghiep\THESIS\Material\origin-resnet18-carReal-horseFake.txt"  # Thay thế bằng đường dẫn tới file của bạn
 with open(file_path, 'r') as file:
     input_text = file.read()
 
@@ -34,13 +34,30 @@ parsed_data = json.loads(json_data)
 
 # Print the resulting JSON
 #print(json_data)
-
+IDS = 3
+MAX = parsed_data[4:8]
+F1 = 2*MAX[0]['f_acc']*MAX[0]['r_acc']/(MAX[0]['f_acc']+MAX[0]['r_acc'])
+F3 = 2*MAX[IDS]['f_acc']*MAX[IDS]['r_acc']/(MAX[IDS]['f_acc']+MAX[IDS]['r_acc'])
+MEAN = 0.5*(F1+F3)
+ID = 0
+for i in range(0, len(parsed_data), 4):
+    if i==0:
+        continue
+    
+    Sample = parsed_data[i:i+4]
+    
+    F1 = 2*Sample[0]['f_acc']*Sample[0]['r_acc']/(Sample[0]['f_acc']+Sample[0]['r_acc'])
+    F3 = 2*Sample[IDS]['f_acc']*Sample[IDS]['r_acc']/(Sample[IDS]['f_acc']+Sample[IDS]['r_acc'])
+    m = 0.5*(F1+F3)
+    if m > MEAN:
+        MAX = Sample
 
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = parsed_data[-4:]
+data = MAX#parsed_data[ID:ID+4]
+print(data)
 # Extract class names and values for r_acc and f_acc
 classes = [item['name'] for item in data]
 r_acc_values = [item['r_acc'] for item in data]
@@ -57,7 +74,7 @@ rects2 = ax.bar(x + width/2, f_acc_values, width, label='f_acc')
 # Add some text for labels, title and axes ticks
 ax.set_xlabel('Classes', fontsize=14)
 ax.set_ylabel('Values', fontsize=14)
-ax.set_title('(4)', fontsize=18)
+ax.set_title('(1)', fontsize=18)
 ax.set_xticks(x)
 ax.set_xticklabels(classes)
 ax.legend()
