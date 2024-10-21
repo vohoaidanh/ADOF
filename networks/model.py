@@ -8,6 +8,7 @@ from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 from functools import partial
 import timm
+from random import choice
 
 
 __all__ = ['build_model']
@@ -119,18 +120,61 @@ class Backbone(nn.Module):
 
 from networks.resnet import resnet50
 
+class ExtractFeature(nn.Module):
+    def __init__(self, backbone, pretrained=True, get_feature=False):
+        super(ExtractFeature, self).__init__()
+        self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
+        self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+        self.multihead_attention = nn.MultiheadAttention(512, 8)
+        self.layer_norm = nn.LayerNorm(512)
+        self.classifier = nn.Linear(512, 1)
+        self.get_feature = get_feature
+        self.preprocess = ADOF
+    
+    def forward(self, x1, x2=None):
+        x1 = self.preprocess(x1)
+        if x2 is None:
+            x1, x2 = self._split_horizontal(x1)
+        else:
+            x1, _ = self._split_horizontal(x1)
+            x2 = self.preprocess(x2)
+            x2 = choice(self._split_horizontal(x2))
+            
+        if self.training:
+            x1, x2 = choice([(x1, x2),(x2, x1)])
+        
+        query = self.backbone(x1)
+        key = self.backbone(x2)
+        output, _ = self.multihead_attention(query, key, key)
+        output = self.layer_norm(output)  # Thêm LayerNorm sau attention
+        output = self.classifier(output)
+        if self.get_feature:
+            return output, query
+        else:
+            return output
+
+    def _split_horizontal(self,x):
+        # img_tensor: [batch_size, channels, 224, 224]
+        bz, c, h, w = x.shape
+    
+        # Chia theo chiều ngang, mỗi ảnh sẽ có kích thước [batch_size, channels, 112, 224]
+        top_half = x[:, :, :h//2, :]   # Nửa trên
+        bottom_half = x[:, :, h//2:, :]  # Nửa dưới
+        
+        return top_half, bottom_half
+    
+
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
         super(Detector, self).__init__()
-        self.adof = ADOF
-        self.adofcross = lambda x: x
-        self.sppf = lambda x: x
+        self.preprocess = lambda x: x
         # Tạo backbone từ timm
         self.c = 3
         if isinstance(backbone, str):
             if backbone.lower() == 'adof':
                 self.backbone = resnet50(pretrained=False)
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
+                self.preprocess  = ADOF
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         
@@ -153,7 +197,7 @@ class Detector(nn.Module):
         self.classifier = nn.Linear(in_features, num_classes)
         
     def forward(self, x):
-        x1 = self.adof(x)
+        x1 = self.preprocess(x)
         x1 = self.sppf(x1)
         if self.c == 6:
             x2 = self.adofcross(x)
@@ -173,7 +217,8 @@ class Detector(nn.Module):
 
 
 def build_model(**kwargs):
-    model = Detector(**kwargs)
+    #model = Detector(**kwargs)
+    model = ExtractFeature(**kwargs)
     return model
 
 if __name__  == '__main__':
@@ -200,5 +245,14 @@ if __name__  == '__main__':
     model.adof(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
 
-
+    backbone = timm.create_model('resnet18', pretrained=False)
+    backbone = nn.Sequential(*list(backbone.children())[:-1])
+    
+    input_tensor = torch.randn(1, 3, 224, 224)
+    features = backbone(input_tensor)
+    plt.plot(features.detach().ravel())
+    
+    extract_feature = build_model(backbone = 'resnet18', pretrained=False)
+    extract_feature.eval()
+    features = extract_feature(input_tensor)
 
