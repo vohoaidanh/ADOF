@@ -104,3 +104,26 @@ E = 0.5 * np.sum((x - y) ** 2)
 E
 
 
+
+labels = torch.tensor([1, 0, 0, 1,1,1,0,1,0,0,1])
+
+
+labels1 = (labels == 1).nonzero(as_tuple=True)[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

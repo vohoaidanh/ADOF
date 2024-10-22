@@ -96,66 +96,56 @@ class RealImageDataset(Dataset):
         # Đọc các ảnh từ các lớp 0_real và 1_fake
         self.real_images = []
         self.fake_images = []
-
+        self.image_paths = []
+        self.labels = []
         # Đọc thư mục chứa ảnh từ class 0_real
         real_dir = os.path.join(root_dir, "0_real")
         if os.path.isdir(real_dir):
             for img_name in os.listdir(real_dir):
                 if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
                     self.real_images.append(os.path.join(real_dir, img_name))
+                    self.labels.append(0)  # Gán nhãn 0 cho real images
         
         # Đọc thư mục chứa ảnh từ class 1_fake
-#        fake_dir = os.path.join(root_dir, "1_fake")
-#        if os.path.isdir(fake_dir):
-#            for img_name in os.listdir(fake_dir):
-#                if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
-#                    self.fake_images.append(os.path.join(fake_dir, img_name))
+        fake_dir = os.path.join(root_dir, "1_fake")
+        if os.path.isdir(fake_dir):
+            for img_name in os.listdir(fake_dir):
+                if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    self.fake_images.append(os.path.join(fake_dir, img_name))
+                    self.labels.append(1)  # Gán nhãn 1 cho fake images
         
         # Kiểm tra nếu có đủ ảnh trong cả 2 lớp
-#        if len(self.real_images) == 0 or len(self.fake_images) == 0:
-#            raise ValueError("Không tìm thấy ảnh trong một hoặc cả hai lớp (0_real, 1_fake).")
+        if len(self.real_images) == 0 or len(self.fake_images) == 0:
+            raise ValueError("Không tìm thấy ảnh trong một hoặc cả hai lớp (0_real, 1_fake).")
+        
+        self.image_paths = self.real_images + self.fake_images
 
     def __len__(self):
         """Trả về số lượng mẫu trong dataset."""
-        return len(self.real_images)
+        return len(self.real_images) + len(self.fake_images)
 
     def __getitem__(self, idx):
         """Trả về 2 ảnh, một từ lớp 0_real và một từ lớp 1_fake."""
         # Chọn ngẫu nhiên ảnh từ lớp 0_real
-        label = choice([0, 1])
-        real_img_path = self.real_images[idx]
+        real_img_path = choice(self.real_images)
         real_img = Image.open(real_img_path).convert('RGB')
         
-        if label == 0:
-            # Label = 0 nghĩa là 2 hình ảnh giống nhau, Label = 1 Nghĩa là 2 hình ảnh khác nhau
-            # Áp dụng data augmentation nếu có
-            if self.data_augment:
-                real_img = self.data_augment(real_img, self.opt)
-
-            # Áp dụng các phép biến đổi (resize, crop, flip, normalize)
-            if self.transform:
-                real_img = self.transform(real_img)
-            
-            real_img2 = real_img
-            
-        else:
-            idx2 = random_exclude([idx], low=0, high=len(self.real_images))
-            img_path = self.real_images[idx2]
-            real_img2 = Image.open(img_path).convert('RGB')
-            
-            # Áp dụng data augmentation nếu có
-            if self.data_augment:
-                real_img = self.data_augment(real_img, self.opt)
-                real_img2 = self.data_augment(real_img2, self.opt)
-
-            # Áp dụng các phép biến đổi (resize, crop, flip, normalize)
-            if self.transform:
-                real_img = self.transform(real_img)
-                real_img2 = self.transform(real_img2)
-
+        current_img_path = self.image_paths[idx]
+        current_img = Image.open(current_img_path).convert('RGB')
+        label = self.labels[idx]
         
+        # Áp dụng data augmentation nếu có
+        if self.data_augment:
+            real_img = self.data_augment(real_img, self.opt)
+            current_img = self.data_augment(current_img, self.opt)
+
+        # Áp dụng các phép biến đổi (resize, crop, flip, normalize)
+        if self.transform:
+            real_img = self.transform(real_img)
+            current_img = self.transform(current_img)
+
         # Trả về cả hai ảnh và nhãn tương ứng
-        return (real_img, real_img2) , label
+        return (real_img, current_img) , label
 
 def random_exclude(exclude, low, high):
     while True:
@@ -266,6 +256,6 @@ if __name__ == '__main__':
     for i in data_loader:
         print(i[1].shape)
         
-    
+    #plt.imshow(sample[0][1].permute(1,2,0))
 
     

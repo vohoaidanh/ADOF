@@ -123,35 +123,38 @@ from networks.resnet import resnet50
 class ExtractFeature(nn.Module):
     def __init__(self, backbone, pretrained=True, get_feature=False):
         super(ExtractFeature, self).__init__()
-        self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
-        self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
-        self.multihead_attention = nn.MultiheadAttention(512, 8)
-        self.layer_norm = nn.LayerNorm(512)
-        self.classifier = nn.Linear(512, 1)
+        self.reference = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
+        self.reference = nn.Sequential(*list(self.reference.children())[:-1])
+        
+        self.investigate = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
+        self.investigate = nn.Sequential(*list(self.investigate.children())[:-1])
+        
         self.get_feature = get_feature
         self.preprocess = ADOF
-    
-    def forward(self, x1, x2=None):
-        x1 = self.preprocess(x1)
-        if x2 is None:
-            x1, x2 = self._split_horizontal(x1)
-        else:
-            x1, _ = self._split_horizontal(x1)
-            x2 = self.preprocess(x2)
-            x2 = choice(self._split_horizontal(x2))
+        self.prelu = nn.PReLU()
+
+        # Một lớp fully connected kết hợp hai vector (sau khi concatenate)
+        self.fc1 = nn.Linear(512, 256)  # Kết hợp 2 vector (512 + 512)
+        self.classifier = nn.Linear(256, 1)
             
-        if self.training:
-            x1, x2 = choice([(x1, x2),(x2, x1)])
+    def forward(self, x):
+        x1, x2 = x
+        x1 = self.preprocess(x1)
+        x2 = self.preprocess(x2)
+               
+        x1 = self.reference(x1)
+        x2 = self.investigate(x2)
+
+        # Kết hợp query và key (concatenate)
+        #x = torch.cat([x1, x2], dim=-1)  # Đầu ra (batch_size, 512 * 2)
+        x = x1 + x2  # Cộng trực tiếp (batch_size, 512)
+        # Đưa qua các lớp fully connected để học sự tương đồng
+        x = self.prelu(self.fc1(x))
+        output = self.classifier(x)
         
-        query = self.backbone(x1)
-        key = self.backbone(x2)
-        output, _ = self.multihead_attention(query, key, key)
-        output = self.layer_norm(output)  # Thêm LayerNorm sau attention
-        output = self.classifier(output)
-        if self.get_feature:
-            return output, query
-        else:
-            return output
+        return output
+       
+        
 
     def _split_horizontal(self,x):
         # img_tensor: [batch_size, channels, 224, 224]
@@ -254,5 +257,5 @@ if __name__  == '__main__':
     
     extract_feature = build_model(backbone = 'resnet18', pretrained=False)
     extract_feature.eval()
-    features = extract_feature(input_tensor)
+    features = extract_feature((input_tensor, input_tensor))
 

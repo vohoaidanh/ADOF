@@ -55,7 +55,7 @@ class Trainer(BaseModel):
         return True
 
     def set_input(self, input):
-        self.input = input[0].to(self.device)
+        self.input = (input[0][0].to(self.device), input[0][1].to(self.device))
         self.label = input[1].to(self.device).float()
 
 
@@ -65,10 +65,26 @@ class Trainer(BaseModel):
     def get_loss(self):
         return self.loss_fn(self.output.squeeze(1), self.label)
 
+
+    def adjust_gradient(self):
+        label_condition = (self.label == 1)
+
+        if label_condition.any():  # Nếu có mẫu nào có nhãn là 1
+            for name, param in self.model.reference.named_parameters():
+                if param.grad is not None:
+                    param.grad *= torch.where(label_condition.unsqueeze(1), 2.0, 1.0).type_as(param.grad)
+
     def optimize_parameters(self):
         self.forward()
         self.loss = self.loss_fn(self.output.squeeze(1), self.label)
         self.optimizer.zero_grad()
         self.loss.backward()
+        self.adjust_gradient()
         self.optimizer.step()
+        
+        
+        
+        
+        
+        
 

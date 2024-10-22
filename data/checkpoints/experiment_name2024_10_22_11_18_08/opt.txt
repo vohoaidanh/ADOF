@@ -28,7 +28,7 @@
                 loss_freq: 400                           
                        lr: 0.0001                        
                      mode: binary                        
-                     name: experiment_name2024_10_21_20_27_03	[default: experiment_name]
+                     name: experiment_name2024_10_22_11_18_08	[default: experiment_name]
                 new_optim: False                         
                     niter: 1000                          
                   no_flip: False                         
