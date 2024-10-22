@@ -121,7 +121,7 @@ class Backbone(nn.Module):
 from networks.resnet import resnet50
 
 class ExtractFeature(nn.Module):
-    def __init__(self, backbone, pretrained=True, get_feature=False):
+    def __init__(self, backbone, pretrained=True, get_feature=False, num_classes=1, freeze_exclude=None, num_features=None):
         super(ExtractFeature, self).__init__()
         self.reference = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         self.reference = nn.Sequential(*list(self.reference.children())[:-1])
@@ -132,10 +132,10 @@ class ExtractFeature(nn.Module):
         self.get_feature = get_feature
         self.preprocess = ADOF
         self.prelu = nn.PReLU()
-
+        self.num_classes = num_classes
         # Một lớp fully connected kết hợp hai vector (sau khi concatenate)
         self.fc1 = nn.Linear(512, 256)  # Kết hợp 2 vector (512 + 512)
-        self.classifier = nn.Linear(256, 1)
+        self.classifier = nn.Linear(256, self.num_classes)
             
     def forward(self, x):
         x1, x2 = x
@@ -154,18 +154,19 @@ class ExtractFeature(nn.Module):
         
         return output
        
-        
 
-    def _split_horizontal(self,x):
-        # img_tensor: [batch_size, channels, 224, 224]
-        bz, c, h, w = x.shape
-    
-        # Chia theo chiều ngang, mỗi ảnh sẽ có kích thước [batch_size, channels, 112, 224]
-        top_half = x[:, :, :h//2, :]   # Nửa trên
-        bottom_half = x[:, :, h//2:, :]  # Nửa dưới
-        
-        return top_half, bottom_half
-    
+# =============================================================================
+#     def _split_horizontal(self,x):
+#         # img_tensor: [batch_size, channels, 224, 224]
+#         bz, c, h, w = x.shape
+#     
+#         # Chia theo chiều ngang, mỗi ảnh sẽ có kích thước [batch_size, channels, 112, 224]
+#         top_half = x[:, :, :h//2, :]   # Nửa trên
+#         bottom_half = x[:, :, h//2:, :]  # Nửa dưới
+#         
+#         return top_half, bottom_half
+#     
+# =============================================================================
 
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
@@ -258,4 +259,6 @@ if __name__  == '__main__':
     extract_feature = build_model(backbone = 'resnet18', pretrained=False)
     extract_feature.eval()
     features = extract_feature((input_tensor, input_tensor))
+
+
 
