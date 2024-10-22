@@ -12,7 +12,10 @@ def validate(model, opt):
     with torch.no_grad():
         y_true, y_pred = [], []
         for img, label in data_loader:
-            in_tens = (img[0].cuda(), img[1].cuda())
+            if isinstance(img, tuple):
+                in_tens = (img[0].cuda(), img[1].cuda())
+            else:
+                in_tens = img.cuda() 
             y_pred.extend(model(in_tens).sigmoid().flatten().tolist())
             y_true.extend(label.flatten().tolist())
 

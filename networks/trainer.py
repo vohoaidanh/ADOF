@@ -55,7 +55,11 @@ class Trainer(BaseModel):
         return True
 
     def set_input(self, input):
-        self.input = (input[0][0].to(self.device), input[0][1].to(self.device))
+        if isinstance(input, tuple):
+            self.input = (input[0][0].to(self.device), input[0][1].to(self.device))
+        else:
+            self.input = input[0].to(self.device)
+        
         self.label = input[1].to(self.device).float()
 
 
@@ -73,7 +77,7 @@ class Trainer(BaseModel):
             for name, param in self.model.reference.named_parameters():
                 if param.grad is not None:
                     param.grad *= torch.where(label_condition.unsqueeze(1), 2.0, 1.0).type_as(param.grad)
-
+        
     def optimize_parameters(self):
         self.forward()
         self.loss = self.loss_fn(self.output.squeeze(1), self.label)
