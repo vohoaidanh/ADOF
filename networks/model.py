@@ -154,7 +154,6 @@ class ExtractFeature(nn.Module):
         
         return output
        
-
 # =============================================================================
 #     def _split_horizontal(self,x):
 #         # img_tensor: [batch_size, channels, 224, 224]
