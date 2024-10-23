@@ -126,9 +126,8 @@ class ExtractFeature(nn.Module):
         self.reference = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
         self.reference = nn.Sequential(*list(self.reference.children())[:-1])
         
-        self.investigate = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
-        self.investigate = nn.Sequential(*list(self.investigate.children())[:-1])
-        
+        #self.investigate = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
+        #self.investigate = nn.Sequential(*list(self.investigate.children())[:-1])
         self.get_feature = get_feature
         self.preprocess = ADOF
         self.prelu = nn.PReLU()
@@ -138,34 +137,34 @@ class ExtractFeature(nn.Module):
         self.classifier = nn.Linear(256, self.num_classes)
             
     def forward(self, x):
-        x1, x2 = x
-        x1 = self.preprocess(x1)
-        x2 = self.preprocess(x2)
-               
-        x1 = self.reference(x1)
-        x2 = self.investigate(x2)
-
-        # Kết hợp query và key (concatenate)
-        #x = torch.cat([x1, x2], dim=-1)  # Đầu ra (batch_size, 512 * 2)
-        x = x1 + x2  # Cộng trực tiếp (batch_size, 512)
-        # Đưa qua các lớp fully connected để học sự tương đồng
-        x = self.prelu(self.fc1(x))
-        output = self.classifier(x)
+        x = self.preprocess(x)
+        x1, x2 = self._split_horizontal(x)
         
-        return output
+        x = self.reference(x)
+
+        output = self.prelu(self.fc1(x))
+        output = self.classifier(output)
+        
+        if self.training:    
+            x1 = self.reference(x1)
+            x1 = F.normalize(x1, p=2, dim=1)
+            x2 = self.reference(x2)
+            x2 = F.normalize(x2, p=2, dim=1)
+            return output, x1, x2
+        
+        else:
+            return output
        
-# =============================================================================
-#     def _split_horizontal(self,x):
-#         # img_tensor: [batch_size, channels, 224, 224]
-#         bz, c, h, w = x.shape
-#     
-#         # Chia theo chiều ngang, mỗi ảnh sẽ có kích thước [batch_size, channels, 112, 224]
-#         top_half = x[:, :, :h//2, :]   # Nửa trên
-#         bottom_half = x[:, :, h//2:, :]  # Nửa dưới
-#         
-#         return top_half, bottom_half
-#     
-# =============================================================================
+    def _split_horizontal(self,x):
+        # img_tensor: [batch_size, channels, 224, 224]
+        bz, c, h, w = x.shape
+    
+        # Chia theo chiều ngang, mỗi ảnh sẽ có kích thước [batch_size, channels, 112, 224]
+        top_half = x[:, :, :h//2, :]   # Nửa trên
+        bottom_half = x[:, :, h//2:, :]  # Nửa dưới
+        
+        return top_half, bottom_half
+    
 
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
@@ -251,13 +250,16 @@ if __name__  == '__main__':
     backbone = timm.create_model('resnet18', pretrained=False)
     backbone = nn.Sequential(*list(backbone.children())[:-1])
     
-    input_tensor = torch.randn(1, 3, 224, 224)
+    input_tensor = torch.randn(2, 3, 224, 224)
     features = backbone(input_tensor)
     plt.plot(features.detach().ravel())
     
     extract_feature = build_model(backbone = 'resnet18', pretrained=False)
     extract_feature.eval()
-    features = extract_feature((input_tensor, input_tensor))
+    features = extract_feature(input_tensor)
+    # Hàm tính similarity loss (ví dụ sử dụng MSE)
+    def similarity_loss_fn(output1, output2):
+        return nn.MSELoss()(output1, output2)
 
-
+    similarity_loss_fn(features[1], features[2])
 

@@ -23,6 +23,7 @@ class Trainer(BaseModel):
 
         if self.isTrain:
             self.loss_fn = nn.BCEWithLogitsLoss()
+            self.loss_fn_similarity = nn.MSELoss()
             # initialize optimizers
             if opt.optim == 'adam':
                 self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()),
@@ -55,21 +56,24 @@ class Trainer(BaseModel):
         return True
 
     def set_input(self, input):
-        self.input = (input[0][0].to(self.device), input[0][1].to(self.device))
+        self.input = input[0].to(self.device)
         self.label = input[1].to(self.device).float()
 
 
     def forward(self):
-        self.output = self.model(self.input)
+        self.output, self.x1, self.x2 = self.model(self.input)
+        
 
     def get_loss(self):
         return self.loss_fn(self.output.squeeze(1), self.label)
 
 
-
     def optimize_parameters(self):
+        self.alpha = 0.5
         self.forward()
-        self.loss = self.loss_fn(self.output.squeeze(1), self.label)
+        self.loss = self.loss_fn(self.output.squeeze(1), self.label) + \
+            self.alpha * self.loss_fn_similarity(self.x1, self.x2)
+            
         self.optimizer.zero_grad()
         self.loss.backward()
         self.optimizer.step()
