@@ -10,7 +10,9 @@ from options.test_options import TestOptions
 import networks.resnet as resnet
 import numpy as np
 import random
-import random
+import torch.quantization
+
+
 def seed_torch(seed=1029):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -52,8 +54,23 @@ print(f'Model_path {opt.model_path}')
 # get model
 model = resnet50(num_classes=1)
 model.load_state_dict(torch.load(opt.model_path, map_location='cpu'), strict=True)
-model.cuda()
 model.eval()
+
+# Fuse layers for static quantization
+model_fused = torch.quantization.fuse_modules(model, [['conv1', 'bn1', 'relu']])
+for layer_name, layer_module in model_fused.named_children():
+    if "layer" in layer_name:
+        for basic_block_name, basic_block_module in layer_module.named_children():
+            torch.quantization.fuse_modules(basic_block_module, [['conv1', 'bn1', 'relu'], ['conv2', 'bn2']])
+
+# Set the model's quantization configuration
+model_fused.qconfig = torch.quantization.get_default_qconfig('fbgemm')  # or 'qnnpack' for ARM
+
+# Prepare the model for static quantization
+torch.quantization.prepare(model_fused, inplace=True)
+
+model = model_fused
+model.cuda()
 
 for testSet in DetectionTests.keys():
     dataroot = DetectionTests[testSet]['dataroot']
