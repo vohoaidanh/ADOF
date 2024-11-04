@@ -214,6 +214,20 @@ plt.show()
 
 
 
+from sklearn.metrics import accuracy_score
+import numpy as np
+# Nhãn thực tế và dự đoán cho lớp 0
+y_true_class_0 = np.array([0, 0, 0, 0, 1 ,1 ,1])
+y_pred_class_0 = np.array([0, 0.2, 0.7, 0, 1 ,1 ,1])
+
+# Tính độ chính xác
+r_acc = accuracy_score(y_true_class_0[y_true_class_0==0], y_pred_class_0[y_true_class_0==0]>0.5)
+print("Độ chính xác cho lớp 0:", r_acc)
+
+
+
+
+
 
 
 
