@@ -22,7 +22,15 @@ class Trainer(BaseModel):
             self.model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=True, num_classes=1, freeze_exclude=None)
 
         if self.isTrain:
-            self.loss_fn = nn.BCEWithLogitsLoss()
+            
+            if opt.mode == 'custom':
+                self.loss_fn = nn.CrossEntropyLoss()
+                print('loss function is CrossEntropyLoss')
+
+            else:
+                self.loss_fn = nn.BCEWithLogitsLoss()
+                print('loss function is BCEWithLogitsLoss')
+
             # initialize optimizers
             if opt.optim == 'adam':
                 self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()),
@@ -55,8 +63,12 @@ class Trainer(BaseModel):
         return True
 
     def set_input(self, input):
-        self.input = input[0].to(self.device)
-        self.label = input[1].to(self.device).float()
+        if isinstance(input[0], torch.Tensor):
+            self.input = input[0].to(self.device)
+            self.label = input[1].to(self.device).float()
+        else:
+            self.input = (input[0][0].to(self.device),input[0][0].to(self.device))
+            self.label = input[1].to(self.device).float()
 
 
     def forward(self):

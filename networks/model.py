@@ -176,8 +176,12 @@ class Detector(nn.Module):
             else:
                 param.requires_grad = True
 
+from noise import NoiseModel
+
 def build_model(**kwargs):
-    model = Detector(**kwargs)
+    #model = Detector(**kwargs)
+    model = NoiseModel()
+    print('build NoiseModel')
     return model
 
 if __name__  == '__main__':

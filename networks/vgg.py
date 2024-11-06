@@ -95,11 +95,11 @@ if __name__ == "__main__":
     import torchvision.transforms as transforms
     import matplotlib.pyplot as plt
     from time import time
-#    model = VGG16()
+    model = VGG16()
     
-#    x = torch.rand(3,224,224)
-#    model(x).shape
-#    summary(model,x.shape)
+    x = torch.rand(3,224,224)
+    model(x.unsqueeze(0))
+    summary(model,x.shape)
     
  
 # =============================================================================
@@ -147,37 +147,37 @@ if __name__ == "__main__":
 # =============================================================================
 
 
-    img = Image.open(r"C:\Users\danhv\Downloads\real.png")
-    transform = transforms.Compose([
-        transforms.ToTensor(),  # Chuyển đổi thành tensor và scale từ [0, 255] sang [0.0, 1.0]
-    ])
+    #img = Image.open(r"C:\Users\danhv\Downloads\real.png")
+    #transform = transforms.Compose([
+    #    transforms.ToTensor(),  # Chuyển đổi thành tensor và scale từ [0, 255] sang [0.0, 1.0]
+    #])
     #img = img.resize((255,255))
     # Áp dụng phép biến đổi
-    image_tensor = transform(img)
-    image_tensor = image_tensor.unsqueeze(0)
-    image_tensor = torch.rand(32,3,256,256)
+    #image_tensor = transform(img)
+    #image_tensor = image_tensor.unsqueeze(0)
+    #image_tensor = torch.rand(32,3,256,256)
     # Khởi tạo lớp Conv2d từ PyTorch
-    conv_layer = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=(3, 3))
+    #conv_layer = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=(3, 3))
     # Đầu vào giả lập
 
     # Khởi tạo lớp Conv2dFFT với trọng số từ conv_layer
-    conv_fft = Conv2dFFT(conv_layer)
+    #conv_fft = Conv2dFFT(conv_layer)
     
     # Tính toán
-    t = time()
-    output = conv_fft.forward(image_tensor)
-    print(time()-t)
+    #t = time()
+    #output = conv_fft.forward(image_tensor)
+    #print(time()-t)
     #output = output.permute(1,0,2,3)
-    print(output.shape)  # Kết quả sẽ có kích thước (1, 6, 32, 32)
-    t = time()
-    out2 = conv_layer(image_tensor)
-    print(time()-t)
-    print(out2.shape)  # Kết quả sẽ có kích thước (1, 6, 32, 32)
+    #print(output.shape)  # Kết quả sẽ có kích thước (1, 6, 32, 32)
+    #t = time()
+    #out2 = conv_layer(image_tensor)
+    #print(time()-t)
+    #print(out2.shape)  # Kết quả sẽ có kích thước (1, 6, 32, 32)
 
     
-    i=0
-    plt.imshow(output[0][i])
-    plt.imshow(out2.detach()[0][i])
+    #i=0
+    #plt.imshow(output[0][i])
+    #plt.imshow(out2.detach()[0][i])
     
 
 

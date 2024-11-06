@@ -3,7 +3,7 @@ import numpy as np
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
-from random import random, choice
+from random import random, choice, randint
 from io import BytesIO
 from PIL import Image
 from PIL import ImageFile
@@ -17,6 +17,9 @@ def dataset_folder(opt, root):
         return binary_dataset(opt, root)
     if opt.mode == 'filename':
         return FileNameDataset(opt, root)
+    if opt.mode == 'custom':
+        return custom_dataset(opt, root)
+    
     raise ValueError('opt.mode needs to be binary or filename.')
 
 
@@ -49,6 +52,83 @@ def binary_dataset(opt, root):
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]))
     return dset
+
+def custom_dataset(opt, root):
+    if opt.isTrain:
+        crop_func = transforms.RandomCrop(opt.cropSize)
+    elif opt.no_crop:
+        crop_func = transforms.Lambda(lambda img: img)
+    else:
+        crop_func = transforms.CenterCrop(opt.cropSize)
+
+    if opt.isTrain and not opt.no_flip:
+        flip_func = transforms.RandomHorizontalFlip()
+    else:
+        flip_func = transforms.Lambda(lambda img: img)
+    if not opt.isTrain and opt.no_resize:
+        rz_func = transforms.Lambda(lambda img: img)
+    else:
+        # rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
+        rz_func = transforms.Resize((opt.loadSize, opt.loadSize))
+
+    dset = CustomDataset(
+            root,
+            transforms.Compose([
+                rz_func,
+                transforms.Lambda(lambda img: data_augment(img, opt)),
+                crop_func,
+                flip_func,
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]))
+    return dset
+
+
+from torch.utils.data import Dataset
+import os
+
+class CustomDataset(Dataset):    
+    """
+    
+    This function return (x1,x2), label for earch data point
+
+    """
+    
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.image_paths = []
+        self.labels = []
+
+        # Duyệt qua các thư mục và lưu đường dẫn, nhãn
+        for label, class_dir in enumerate(os.listdir(root_dir)):
+            class_path = os.path.join(root_dir, class_dir)
+            if os.path.isdir(class_path):
+                for img_name in os.listdir(class_path):
+                    img_path = os.path.join(class_path, img_name)
+                    self.image_paths.append(img_path)
+                    self.labels.append(label)
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        random_idx = randint(0, len(self.image_paths) - 1)
+
+        img_path = self.image_paths[idx]
+        label = self.labels[idx]
+        image = Image.open(img_path).convert("RGB")  # Đảm bảo ảnh có 3 kênh
+        
+        second_img_path = self.image_paths[random_idx]
+        second_label = self.labels[random_idx]
+        second_image = Image.open(second_img_path).convert("RGB")  # Đảm bảo ảnh có 3 kênh
+        
+        if self.transform:
+            image = self.transform(image)
+            second_image = self.transform(second_image)
+        final_label = label + second_label
+        
+        return (image, second_image), final_label
 
 
 class FileNameDataset(datasets.ImageFolder):
