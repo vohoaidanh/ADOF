@@ -181,6 +181,8 @@ from noise import NoiseModel
 def build_model(**kwargs):
     #model = Detector(**kwargs)
     model = NoiseModel()
+    
+    model.main_branch.load_state_dict(torch.load("../weights/ADOF_model_epoch_9.pth", map_location=torch.device('cpu')))
     print('build NoiseModel')
     return model
 

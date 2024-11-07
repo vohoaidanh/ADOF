@@ -200,6 +200,10 @@ class NoiseModel(nn.Module):
         super(NoiseModel, self).__init__()
         self.preprocess = ADOF
         self.main_branch = ResNetFeature(Bottleneck, [3, 4, 6, 3])
+        # Đóng băng nhánh self.main_branch
+        for param in self.main_branch.parameters():
+            param.requires_grad = False
+
         self.noise_branch = ResNetFeature(Bottleneck, [3, 4, 6, 3])
         self.layer_norm = nn.LayerNorm([512, 28, 28])
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
