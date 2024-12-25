@@ -24,6 +24,8 @@ def png2jpeg(image):
     
     return image
 
+def ADOF(input):
+    return "Empty function"
 
 def ADOF_diff(input_tensor):
     device = input_tensor.device
