@@ -177,6 +177,16 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 self.preprocess = ADOF_diff
                 in_features = self.backbone(torch.randn(1, 1, 224, 224))
+                
+            elif backbone.lower() == 'dino':
+                self.backbone = timm.create_model(
+                    'vit_small_patch8_224.dino',
+                    pretrained=True,
+                    num_classes=0,  # remove classifier nn.Linear
+                )
+                self.preprocess = ADOF
+                in_features = self.backbone(torch.randn(1, 3, 224, 224))
+                
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
                 self.preprocess = partial(highpass_filter, cutoff_percent=50)
@@ -224,40 +234,20 @@ if __name__  == '__main__':
     t = transforms.ToTensor()
     all_model_list = timm.list_models()
 
-    vit_list = timm.list_models(filter='vit*')
-    vgg_list = timm.list_models(filter='vgg*')
-    eff_list = timm.list_models(filter='ef*')
-    mobilenet = timm.list_models(filter='*mobilenet*')
-    RegNet = timm.list_models(filter='*RegNet*')
-    resnet_list = timm.list_models(filter='resn*')
+    # vit_list = timm.list_models(filter='vit*')
+    # vgg_list = timm.list_models(filter='vgg*')
+    # eff_list = timm.list_models(filter='ef*')
+    # mobilenet = timm.list_models(filter='*mobilenet*')
+    # RegNet = timm.list_models(filter='*RegNet*')
+    # resnet_list = timm.list_models(filter='resn*')
 
     #'vgg19_bn', 'vit_base_patch32_224', 'efficientnet_b0', 'efficientvit_b0', 'mobilenetv3_large_100', 'mobilenetv3_small_100', 'mobilenetv3_small_050'
-    backbone = 'adof_diff'
+    backbone = 'dino'
     #backbone = resnet50(pretrained=False)
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
     model.preprocess(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
-    
-# =============================================================================
-#     
-#     img = Image.open(r"C:\Users\danhv\Downloads\ffhq_real.png")
-#     img = t(img)
-#     img = img.unsqueeze(0)
-#     
-#     out = highpass_filter(img, cutoff_percent=50)[0].permute(1,2,0)
-#     plt.imshow(100*out)
-#     
-#     out_100 = highpass_filter(img, cutoff_percent=10)[0].permute(1,2,0)
-#     out_75 = highpass_filter(img, cutoff_percent=75)[0].permute(1,2,0)
-#     out_30 = highpass_filter(img, cutoff_percent=30)[0].permute(1,2,0)
-#     
-#     torch.sum(img[0].permute(1,2,0) - out_30)
-# =============================================================================
-    
-    
-    
-    
-    
+    model
     
     
     
