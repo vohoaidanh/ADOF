@@ -8,6 +8,9 @@ from torch.nn import functional as F
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 from functools import partial
+import vision_transformer as vits
+from vision_transformer import remove_module_prefix, remove_head_modules
+
 import timm
 
 
@@ -179,11 +182,20 @@ class Detector(nn.Module):
                 in_features = self.backbone(torch.randn(1, 1, 224, 224))
                 
             elif backbone.lower() == 'dino':
-                self.backbone = timm.create_model(
-                    'vit_small_patch8_224.dino',
-                    pretrained=True,
-                    num_classes=0,  # remove classifier nn.Linear
-                )
+                        
+                self.backbone = vits.__dict__['vit_small'](
+                    patch_size = 16
+                    )
+                
+                if pretrained:
+                    state_dict = torch.load('../weights/dino_deitsmall16_pretrain_full_checkpoint.pth')
+                    state_dict = remove_module_prefix(state_dict['student'],'module.backbone.')
+                    state_dict = remove_head_modules(state_dict, 'module.head.')
+                    self.backbone.load_state_dict(state_dict, strict=True)
+                    
+                    for name, param in self.backbone.named_parameters():
+                        param.requires_grad = False
+                        
                 self.preprocess = ADOF
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
                 
@@ -215,12 +227,12 @@ class Detector(nn.Module):
         output = self.classifier(features)
         return output
     
-    def freeze_layers(self, model, layers_to_freeze):
+    def freeze_layers(self, model, freeze_exclude):
         for name, param in model.named_parameters():
-            if any(layer in name for layer in layers_to_freeze):
-                param.requires_grad = False
-            else:
+            if any(layer in name for layer in freeze_exclude):
                 param.requires_grad = True
+            else:
+                param.requires_grad = False
 
 def build_model(**kwargs):
     model = Detector(**kwargs)
@@ -233,6 +245,7 @@ if __name__  == '__main__':
     import matplotlib.pyplot as plt
     t = transforms.ToTensor()
     all_model_list = timm.list_models()
+    from vision_transformer import remove_module_prefix, remove_head_modules
 
     # vit_list = timm.list_models(filter='vit*')
     # vgg_list = timm.list_models(filter='vgg*')
@@ -247,18 +260,6 @@ if __name__  == '__main__':
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
     model.preprocess(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
-    model
+    model.backbone
     
     
-    
-    
-    
-    
-    
-
-
-
-
-
-
-
