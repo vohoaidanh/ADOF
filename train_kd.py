@@ -161,7 +161,7 @@ if __name__ == '__main__':
             model.optimize_parameters()
 
             if model.total_steps % opt.loss_freq == 0:
-                print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss/d_loss: {}/{} at step: {} lr {}".format(model.loss, model.d_loss, model.total_steps, model.lr))
+                print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), "Train loss: {} at step: {} lr {}".format(model.loss, model.total_steps, model.lr))
                 train_writer.add_scalar('loss', model.loss, model.total_steps)
                 log_metric("train/loss", model.loss, step=model.total_steps, epoch = epoch)  # Log the current loss directly
 
@@ -194,6 +194,4 @@ if __name__ == '__main__':
 
     #model.eval();testmodel()
     model.save_networks('last')
-    model.student_handle.remove()
-    model.teacher_handle.remove()
     
