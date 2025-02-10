@@ -55,7 +55,7 @@ class Backbone(nn.Module):
         features = features.view(-1, self.num_features)
         return features
 
-from networks.resnet import resnet50
+from networks.resnet import resnet50, resnet_distill
 
 class Detector(nn.Module):
     def __init__(self, backbone, num_features = 'auto', num_classes=1, pretrained=False, freeze_exclude=None):
@@ -68,7 +68,12 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 self.preprocess = ADOF
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
-
+            elif backbone.lower() == 'adof_distill':
+                self.backbone = resnet_distill(pretrained=False)
+                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
+                self.preprocess = ADOF
+                in_features = self.backbone(torch.randn(1, 3, 224, 224))
+                
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
                 #self.preprocess = partial(highpass_filter, cutoff_percent=50)
@@ -147,20 +152,6 @@ if __name__  == '__main__':
 # =============================================================================
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-
-
 
 
 

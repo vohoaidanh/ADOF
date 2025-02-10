@@ -6,7 +6,7 @@ from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
 
 
-__all__ = ['ResNet', 'resnet50']
+__all__ = ['ResNet', 'resnet50', 'resnet_distill']
 
 
 model_urls = {
@@ -209,9 +209,23 @@ def resnet50(pretrained=False, **kwargs):
     return model
 
 
+def resnet_distill(pretrained=False, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [1, 1, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    return model
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-
-
-
+if __name__ == '__main__':
+    model = resnet_distill()
+    print(count_parameters(model))
+    
+    
 

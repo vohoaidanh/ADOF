@@ -22,16 +22,17 @@ class Trainer(BaseModel):
         self.criterion_ce = nn.CrossEntropyLoss()   
         self.d_loss = 0.0
         
-        self.model_teacher.load_state_dict(torch.load("../weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
+        
         
         if self.isTrain and not opt.continue_train:
             #self.model = resnet50(pretrained=False, num_classes=1)
             self.model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=False, num_classes=1, freeze_exclude=None)
             self.model_teacher = resnet50(pretrained=False, num_classes=1)
+            self.model_teacher.load_state_dict(torch.load("./weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
             self.model_teacher.eval()
 
 
-        self.student_handle = self.model.avgpool.register_forward_hook(self.student_hook)
+        self.student_handle = self.model.backbone.avgpool.register_forward_hook(self.student_hook)
         self.teacher_handle = self.model_teacher.avgpool.register_forward_hook(self.teacher_hook)
 
 
@@ -60,7 +61,7 @@ class Trainer(BaseModel):
             self.model.to(opt.gpu_ids[0])
             self.model_teacher.to(opt.gpu_ids[0])
  
-    def teacher_hook_fn(self, module, input, output):
+    def teacher_hook(self, module, input, output):
         self.features_teacher_512 = output.view(output.size(0), -1)  # Flatten
         
     def student_hook(self, module, input, output):
@@ -98,7 +99,7 @@ class Trainer(BaseModel):
         #     torch.softmax(teacher_logits / self.T, dim=1),
         # )
         
-        loss = self.criterion_mse(self.features_student_512, self.features_teacher_512)
+        loss = self.criterion_ce(self.features_student_512, self.features_teacher_512)
         
         return loss
         
