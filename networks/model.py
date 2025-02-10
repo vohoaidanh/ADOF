@@ -15,46 +15,6 @@ __all__ = ['build_model']
 import torch
 import torch.fft
 
-def highpass_filter(image_tensor: torch.Tensor, cutoff_percent: float) -> torch.Tensor:
-    """
-    Preprocess a tensor image by converting it to the frequency domain, applying a high-frequency cutoff,
-    and converting it back to the spatial domain.
-
-    Parameters:
-    - image_tensor (torch.Tensor): Input image tensor of shape (bz, c, 224, 224).
-    - cutoff_percent (float): Percentage of high-frequency components to keep (0 to 100).
-
-    Returns:
-    - torch.Tensor: The processed image tensor in the spatial domain.
-    """
-    # Ensure the input is in the correct shape (bz, c, 224, 224)
-    assert image_tensor.ndim == 4, "Image tensor should be 4D (bz, c, 224, 224)."
-    
-    bz, c, h, w = image_tensor.shape
-    
-    # Perform 2D FFT on each image channel
-    fft_image = torch.fft.fft2(image_tensor, dim=(-2, -1))
-    fft_image_shifted = torch.fft.fftshift(fft_image, dim=(-2, -1))  # Shift zero freq component to the center
-    
-    # Create a mask to remove low frequencies and keep high frequencies
-    cutoff = cutoff_percent / 100.0
-    center_h, center_w = h // 2, w // 2
-    cutoff_h, cutoff_w = int((1 - cutoff) * h // 2), int((1 - cutoff) * w // 2)
-
-    # Start with a mask that keeps everything (high frequencies included)
-    mask = torch.ones_like(fft_image, dtype=torch.bool)
-    
-    # Remove the low frequencies in the center based on cutoff
-    mask[:, :, center_h-cutoff_h:center_h+cutoff_h, center_w-cutoff_w:center_w+cutoff_w] = False
-    
-    # Apply the mask: Keep only high frequencies
-    fft_image_filtered = fft_image_shifted * mask
-    
-    # Shift back and perform inverse FFT to return to spatial domain
-    fft_image_unshifted = torch.fft.ifftshift(fft_image_filtered, dim=(-2, -1))
-    image_filtered = torch.fft.ifft2(fft_image_unshifted, dim=(-2, -1)).real
-    
-    return image_filtered
 
 def ADOF(input_tensor):
     device = input_tensor.device
@@ -84,69 +44,6 @@ def ADOF(input_tensor):
     return output
 
 
-def ADOF_diff(input_tensor):
-    device = input_tensor.device
-    batch_size, channels, height, width = input_tensor.size()
-
-    # Define the gradient filters for x and y directions
-    kernel_x = torch.tensor([[0, 0, 0], [0, -1, 1], [0, 0, 0]], dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
-    kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
-
-    # Expand the kernels to match the number of input channels
-    kernel_x = kernel_x.expand(channels, 1, 3, 3)
-    kernel_y = kernel_y.expand(channels, 1, 3, 3)
-
-    # Apply the filters
-    diff_x = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels) + 1e-9 # to avoid div 0
-    diff_y = F.conv2d(input_tensor, kernel_y, padding=1, groups=channels)
-    
-    #diff = diff_y/diff_x
-    
-    # Set the gradient values to 0.0 for cases where dy/dx is greater than 100, which approximates gradients close to +/- π/2
-    # The threshold of 100 is a reference value and can be tuned for optimal performance during actual training.
-    #diff = torch.where(torch.abs(diff) > 1e2, torch.tensor(0.0), diff)
-    
-    # Compute the arctangent of the difference and normalize it to the range [0, 1]
-    #output = (torch.arctan(diff) / (torch.pi / 2) + 1.0) / 2.0
-    output = (torch.arctan2(diff_y,diff_x) / (torch.pi / 2) + 1.0) / 2.0
-    return torch.abs(output[:, 0] - output[:, 2]).unsqueeze(1)
-
-class SPPF(nn.Module):
-    def __init__(self, in_channels, out_channels, pool_sizes=[1, 2, 4]):
-        super(SPPF, self).__init__()
-        self.pool_sizes = pool_sizes
-        
-        # Define convolutional layer after pooling
-        self.conv = nn.Conv2d(in_channels * (len(pool_sizes) + 1), out_channels, kernel_size=1)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-    def forward(self, x):
-        # List to hold the pooled outputs
-        pools = []
-        
-        # Perform pooling for each size and append to the list
-        for size in self.pool_sizes:
-            pooled = nn.functional.avg_pool2d(x, kernel_size=size, stride=size)
-            # Upsample the pooled output to match the input size
-            pooled = nn.functional.interpolate(pooled, size=x.shape[2:], mode='nearest')
-            pools.append(pooled)
-        
-        # Concatenate the original input with pooled outputs
-        out = torch.cat([x] + pools, dim=1)
-        out = self.conv(out)
-        out = self.bn1(out)
-        return out
-
-def mean_filter_2d(input_tensor, kernel_size=5):
-    device = input_tensor.device
-    batch_size, channels, height, width = input_tensor.size()
-
-    # Define the mean filter kernel for 3 channels
-    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=device) / (kernel_size * kernel_size)
-    kernel = kernel.expand(channels, 1, kernel_size, kernel_size)
-    output = F.conv2d(input_tensor, kernel, padding=1, groups=channels)
-    
-    return output
-
 class Backbone(nn.Module):
     def __init__(self, backbone):
         super(Backbone, self).__init__()
@@ -171,15 +68,10 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 self.preprocess = ADOF
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
-            elif backbone.lower() == 'adof_diff':
-                self.backbone = resnet50(pretrained=False)
-                self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=2, padding=1, bias=False)
-                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                self.preprocess = ADOF_diff
-                in_features = self.backbone(torch.randn(1, 1, 224, 224))
+
             else:
                 self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0)
-                self.preprocess = partial(highpass_filter, cutoff_percent=50)
+                #self.preprocess = partial(highpass_filter, cutoff_percent=50)
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
 
         elif isinstance(backbone, nn.Module):

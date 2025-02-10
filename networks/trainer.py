@@ -22,12 +22,13 @@ class Trainer(BaseModel):
         self.criterion_ce = nn.CrossEntropyLoss()   
         self.d_loss = 0.0
         
-        self.model_teacher.load_state_dict(torch.load("./weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
+        self.model_teacher.load_state_dict(torch.load("../weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
         
         if self.isTrain and not opt.continue_train:
             #self.model = resnet50(pretrained=False, num_classes=1)
             self.model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=False, num_classes=1, freeze_exclude=None)
             self.model_teacher = resnet50(pretrained=False, num_classes=1)
+            self.model_teacher.eval()
 
 
         self.student_handle = self.model.avgpool.register_forward_hook(self.student_hook)
@@ -113,4 +114,15 @@ class Trainer(BaseModel):
         self.loss.backward()
         self.optimizer.step()
     
+
+if __name__ == '__main__':
+    model_teacher = resnet50(num_classes=1)
+    model_teacher.load_state_dict(torch.load("../weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
+
+
+
+
+
+
+
 

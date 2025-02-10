@@ -208,3 +208,10 @@ def resnet50(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
+
+
+
+
+
+
+
