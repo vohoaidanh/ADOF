@@ -23,13 +23,13 @@ class Trainer(BaseModel):
         self.d_loss = 0.0
         
         
-        
         if self.isTrain and not opt.continue_train:
             #self.model = resnet50(pretrained=False, num_classes=1)
-            self.model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=False, num_classes=1, freeze_exclude=None)
+            self.model = build_model(backbone=opt.backbone, num_features=opt.num_features, pretrained=False, num_classes=1, freeze_exclude=[])
             self.model_teacher = resnet50(pretrained=False, num_classes=1)
             self.model_teacher.load_state_dict(torch.load("./weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
-            self.model_teacher.eval()
+            print()
+            self.model_teacher.eval('alpha:',self.alpha)
 
 
         self.student_handle = self.model.backbone.avgpool.register_forward_hook(self.student_hook)
@@ -99,7 +99,7 @@ class Trainer(BaseModel):
         #     torch.softmax(teacher_logits / self.T, dim=1),
         # )
         
-        loss = self.criterion_ce(self.features_student_512, self.features_teacher_512)
+        loss = self.criterion_ce(self.features_student_512, self.features_teacher_512)/512
         
         return loss
         
