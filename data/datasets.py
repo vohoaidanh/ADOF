@@ -1,5 +1,7 @@
 import cv2
+import math
 import numpy as np
+import torch.fft
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
@@ -32,11 +34,18 @@ def binary_dataset(opt, root):
         flip_func = transforms.RandomHorizontalFlip()
     else:
         flip_func = transforms.Lambda(lambda img: img)
+        
     if not opt.isTrain and opt.no_resize:
         rz_func = transforms.Lambda(lambda img: img)
     else:
         # rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
         rz_func = transforms.Resize((opt.loadSize, opt.loadSize))
+        
+    if opt.freq_cutoff:
+        freq_cutoff_percent = opt.freq_cutoff_percent
+        freq_cutoff_func = transforms.Lambda(lambda img: frequency_cutoff(img, freq_cutoff_percent))
+    else:
+        freq_cutoff_func = transforms.Lambda(lambda img: img)
 
     dset = datasets.ImageFolder(
             root,
@@ -45,6 +54,7 @@ def binary_dataset(opt, root):
                 transforms.Lambda(lambda img: data_augment(img, opt)),
                 crop_func,
                 flip_func,
+                freq_cutoff_func,
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]))
@@ -137,3 +147,50 @@ rz_dict = {'bilinear': InterpolationMode.BILINEAR,
 def custom_resize(img, opt):
     interp = sample_discrete(opt.rz_interp)
     return TF.resize(img, (opt.loadSize,opt.loadSize), interpolation=rz_dict[interp])
+
+def frequency_cutoff(image_tensor, n):
+    # Tính FFT của tensor ảnh
+    fft_image = torch.fft.fft2(image_tensor)
+    
+    # Chuyển sang không gian tần số
+    fft_shift = torch.fft.fftshift(fft_image)
+    
+    # Xác định kích thước của tensor
+    _, height, width = image_tensor.shape
+    
+    # Tính kích thước của cửa sổ lọc hình vuông cần loại bỏ
+    low_freq_side = int(min(height, width) * n / 100)
+    
+    # Tạo mặt nạ (mask) để giữ lại tần số cao
+    mask = torch.ones((height, width))
+    cy, cx = height // 2, width // 2  # Tọa độ của tâm
+    
+    # Xác định vùng tần số thấp cần loại bỏ
+    mask[cy-low_freq_side//2:cy+low_freq_side//2, cx-low_freq_side//2:cx+low_freq_side//2] = 0
+    
+    # Áp dụng mặt nạ để loại bỏ tần số thấp
+    fft_shift = fft_shift * mask
+    
+    # Chuyển ngược lại không gian hình ảnh
+    fft_ishift = torch.fft.ifftshift(fft_shift)
+    image_filtered = torch.fft.ifft2(fft_ishift)
+    
+    # Lấy phần thực của tensor kết quả
+    return torch.abs(image_filtered), mask
+
+# Ví dụ sử dụng
+
+if __name__ == "__main__":
+    
+    import matplotlib.pyplot as plt
+    
+    image_tensor = torch.ones((3,224,224))
+    
+    im,mask = frequency_cutoff(image_tensor, 75)
+    mask.shape
+
+    
+    
+    
+    
+    

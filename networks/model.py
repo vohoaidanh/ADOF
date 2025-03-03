@@ -171,6 +171,13 @@ class Detector(nn.Module):
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
                 self.preprocess = ADOF
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
+                
+            elif backbone.lower() == 'highpass':
+                self.backbone = resnet50(pretrained=False)
+                self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
+                self.preprocess = partial(highpass_filter, cutoff_percent=50)
+                in_features = self.backbone(torch.randn(1, 3, 224, 224))
+                
             elif backbone.lower() == 'adof_diff':
                 self.backbone = resnet50(pretrained=False)
                 self.backbone.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=2, padding=1, bias=False)
