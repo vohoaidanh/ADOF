@@ -40,12 +40,7 @@ def binary_dataset(opt, root):
     else:
         # rz_func = transforms.Lambda(lambda img: custom_resize(img, opt))
         rz_func = transforms.Resize((opt.loadSize, opt.loadSize))
-        
-    if opt.freq_cutoff:
-        freq_cutoff_percent = opt.freq_cutoff_percent
-        freq_cutoff_func = transforms.Lambda(lambda img: frequency_cutoff(img, freq_cutoff_percent))
-    else:
-        freq_cutoff_func = transforms.Lambda(lambda img: img)
+   
 
     dset = datasets.ImageFolder(
             root,
@@ -54,7 +49,6 @@ def binary_dataset(opt, root):
                 transforms.Lambda(lambda img: data_augment(img, opt)),
                 crop_func,
                 flip_func,
-                freq_cutoff_func,
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]))

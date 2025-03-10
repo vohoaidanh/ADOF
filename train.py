@@ -44,10 +44,10 @@ def seed_torch(seed=1029):
 #└── test/
 #    └── [...]
 
-#vals = ['progan', 'stylegan', 'stylegan2', 'biggan', 'cyclegan', 'stargan', 'gaugan', 'deepfake']
-#multiclass = [1, 1, 1, 0, 1, 0, 0, 0]
-vals = ['car', 'cat', 'chair', 'horse']
-multiclass = [0, 0, 0, 0]
+vals = ['progan', 'stylegan', 'stylegan2', 'biggan', 'cyclegan', 'stargan', 'gaugan', 'deepfake']
+multiclass = [1, 1, 1, 0, 1, 0, 0, 0]
+#vals = ['car', 'cat', 'chair', 'horse']
+#multiclass = [0, 0, 0, 0]
 
 def get_val_opt():
     val_opt = TrainOptions().parse(print_options=False)
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     #############################################################
     
     seed_torch(100)
-    Testdataroot = os.path.join(opt.dataroot, 'test/progan')
+    Testdataroot = os.path.join(opt.dataroot, 'test')
     opt.dataroot = '{}/{}/'.format(opt.dataroot, opt.train_split)
     Logger(os.path.join(opt.checkpoints_dir, opt.name, 'log.log'))
     print('  '.join(list(sys.argv)) )
