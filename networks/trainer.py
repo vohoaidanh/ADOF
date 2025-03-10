@@ -19,7 +19,7 @@ class Trainer(BaseModel):
         self.alpha = 0.5
         self.T = 10
         self.DKL = nn.KLDivLoss()
-        self.criterion_ce = nn.CrossEntropyLoss()   
+        self.distill_loss = nn.MSELoss()   
         self.d_loss = 0.0
         
         
@@ -63,11 +63,22 @@ class Trainer(BaseModel):
  
     def teacher_hook(self, module, input, output):
         self.features_teacher_512 = output.view(output.size(0), -1)  # Flatten
+        mean = self.features_teacher_512.mean(dim=0, keepdim=True)  # [1, 512]
+        std = self.features_teacher_512.std(dim=0, keepdim=True) + 1e-8  # [1, 512], tránh chia cho 0
+    
+        # Chuẩn hóa Z-score
+        self.features_teacher_512 = (self.features_teacher_512 - mean) / std
         
     def student_hook(self, module, input, output):
         """ Hook để lấy feature 512-dim của Student """
         self.features_student_512 = output.view(output.size(0), -1)  # Flatten
+        mean = self.features_student_512.mean(dim=0, keepdim=True)  # [1, 512]
+        std = self.features_student_512.std(dim=0, keepdim=True) + 1e-8  # [1, 512], tránh chia cho 0
+    
+        # Chuẩn hóa Z-score
+        self.features_student_512 = (self.features_student_512 - mean) / std
         
+            
     def adjust_learning_rate(self, min_lr=1e-6):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] *= 0.9
@@ -99,7 +110,7 @@ class Trainer(BaseModel):
         #     torch.softmax(teacher_logits / self.T, dim=1),
         # )
         
-        loss = self.criterion_ce(self.features_student_512, self.features_teacher_512)/512
+        loss = self.distill_loss(self.features_student_512, self.features_teacher_512)
         
         return loss
         
