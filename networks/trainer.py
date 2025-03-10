@@ -29,7 +29,7 @@ class Trainer(BaseModel):
             self.model_teacher = resnet50(pretrained=False, num_classes=1)
             self.model_teacher.load_state_dict(torch.load("./weights/ADOF_model_epoch_9.pth", map_location='cpu'), strict=True)
             print()
-            self.model_teacher.eval('alpha:',self.alpha)
+            self.model_teacher.eval()
 
 
         self.student_handle = self.model.backbone.avgpool.register_forward_hook(self.student_hook)
