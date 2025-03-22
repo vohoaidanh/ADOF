@@ -172,10 +172,13 @@ class Detector(nn.Module):
                 self.preprocess = ADOF
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
                 
-            elif backbone.lower() == 'highpass':
+            elif 'highpass' in backbone.lower():
+                cutoff_percent = int(backbone.lower().split("_")[-1])
+                
+                    
                 self.backbone = resnet50(pretrained=False)
                 self.backbone.adof = lambda x: x  # Định nghĩa hàm không làm gì
-                self.preprocess = partial(highpass_filter, cutoff_percent=50)
+                self.preprocess = partial(highpass_filter, cutoff_percent=cutoff_percent)
                 in_features = self.backbone(torch.randn(1, 3, 224, 224))
                 
             elif backbone.lower() == 'adof_diff':
@@ -261,19 +264,6 @@ if __name__  == '__main__':
 #     torch.sum(img[0].permute(1,2,0) - out_30)
 # =============================================================================
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
 
 
 
