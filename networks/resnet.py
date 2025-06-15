@@ -17,33 +17,59 @@ model_urls = {
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
 
+# def ADOF(input_tensor):
+#     device = input_tensor.device
+#     batch_size, channels, height, width = input_tensor.size()
+
+#     # Define the gradient filters for x and y directions
+#     kernel_x = torch.tensor([[0, 0, 0], [0, -1, 1], [0, 0, 0]], dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+#     kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
+
+#     # Expand the kernels to match the number of input channels
+#     kernel_x = kernel_x.expand(channels, 1, 3, 3)
+#     kernel_y = kernel_y.expand(channels, 1, 3, 3)
+
+#     # Apply the filters
+#     diff_x = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels) + 1e-9 # to avoid div 0
+#     diff_y = F.conv2d(input_tensor, kernel_y, padding=1, groups=channels)
+    
+#     diff = diff_y/diff_x
+    
+#     # Set the gradient values to 0.0 for cases where dy/dx is greater than 100, which approximates gradients close to +/- π/2
+#     # The threshold of 100 is a reference value and can be tuned for optimal performance during actual training.
+#     diff = torch.where(torch.abs(diff) > 1e2, torch.tensor(0.0), diff)
+    
+#     # Compute the arctangent of the difference and normalize it to the range [0, 1]
+#     output = (torch.arctan(diff) / (torch.pi / 2) + 1.0) / 2.0
+  
+#     return output
+
+
 def ADOF(input_tensor):
     device = input_tensor.device
     batch_size, channels, height, width = input_tensor.size()
 
-    # Define the gradient filters for x and y directions
-    kernel_x = torch.tensor([[0, 0, 0], [0, -1, 1], [0, 0, 0]], dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
-    kernel_y = kernel_x.transpose(2, 3)  # Transpose kernel_x to get kernel_y
+    # Gradient kernels
+    kernel_x = torch.tensor([[0, 0, 0], 
+                             [0, 1, -1], 
+                             [0, 0, 0]], dtype=torch.float32, device=device).reshape(1, 1, 3, 3)
+    kernel_y = kernel_x.transpose(2, 3)
 
-    # Expand the kernels to match the number of input channels
-    kernel_x = kernel_x.expand(channels, 1, 3, 3)
-    kernel_y = kernel_y.expand(channels, 1, 3, 3)
+    # Expand kernels to match number of channels
+    kernel_x = kernel_x.expand(channels, 1, 3, 3).contiguous()
+    kernel_y = kernel_y.expand(channels, 1, 3, 3).contiguous()
 
-    # Apply the filters
-    diff_x = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels) + 1e-9 # to avoid div 0
-    diff_y = F.conv2d(input_tensor, kernel_y, padding=1, groups=channels)
-    
-    diff = diff_y/diff_x
-    
-    # Set the gradient values to 0.0 for cases where dy/dx is greater than 100, which approximates gradients close to +/- π/2
-    # The threshold of 100 is a reference value and can be tuned for optimal performance during actual training.
-    diff = torch.where(torch.abs(diff) > 1e2, torch.tensor(0.0), diff)
-    
-    # Compute the arctangent of the difference and normalize it to the range [0, 1]
-    output = (torch.arctan(diff) / (torch.pi / 2) + 1.0) / 2.0
-  
-    return output
+    # Compute gradients
+    grad_x = F.conv2d(input_tensor, kernel_x, padding=1, groups=channels)
+    grad_y = F.conv2d(input_tensor, kernel_y, padding=1, groups=channels)
 
+    # Use atan2 to get full gradient direction (range: [-pi, pi])
+    direction = torch.atan2(grad_y, grad_x)
+
+    # Normalize to [0, 1]
+    normalized = (direction + torch.pi) / (2 * torch.pi)
+
+    return normalized
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""

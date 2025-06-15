@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['draf.py', 'data\\datasets.py', 'options\\base_options.py', 'networks\\model.py', 'networks\\resnet.py', 'networks\\trainer.py', 'train.py']
+recent_files = ['draf.py', 'networks\\resnet.py', 'networks\\trainer.py', 'train.py', 'networks\\base_model.py', 'networks\\model.py']
 
 [main]
 version = 0.2.0
