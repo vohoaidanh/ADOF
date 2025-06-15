@@ -13,6 +13,7 @@ from networks.trainer import Trainer
 from options.train_options import TrainOptions
 from options.test_options import TestOptions
 from util import Logger
+import json
 ####################################################
 from comet_ml import Experiment
 from comet_ml.integration.pytorch import log_model
@@ -110,36 +111,88 @@ if __name__ == '__main__':
     if experiment is not None:
         opt_dict = vars(opt)
         experiment.log_parameters(opt_dict)
-
     
     def testmodel(step=None, epoch=None):
-        global experiment  # Declare that we are using the global 'experiment'
-        print('*'*25);accs = [];aps = []
+        global experiment
+        print('*' * 25)
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+    
+        all_results = []
+    
         for v_id, val in enumerate(vals):
-            Testopt.dataroot = '{}/{}'.format(Testdataroot, val)
+            Testopt.dataroot = f'{Testdataroot}/{val}'
             Testopt.classes = os.listdir(Testopt.dataroot) if multiclass[v_id] else ['']
             Testopt.no_resize = False
             Testopt.no_crop = False
-            acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
-            accs.append(acc);aps.append(ap)
-            print("({} {:12}) acc: {:.4f}; ap: {:.4f}; r_acc: {:.4f}; f_acc: {:.4f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
-        
-            # Log the metrics for Comet
-            #experiment.log_metric(f"test/acc_{val}", acc * 100)
-            #experiment.log_metric(f"test/ap_{val}", ap * 100)
-            #experiment.log_metric(f"test/r_acc_{val}", r_acc)
-            #experiment.log_metric(f"test/f_acc_{val}", f_acc)
-        
-        print("({} {:10}) acc: {:.4f}; ap: {:.4f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
+    
+            results = validate(model.model, Testopt, return_images=False)
+    
+            print(f"({v_id} {val:12}) acc: {results['acc']*100:.4f}; ap: {results['ap']*100:.4f}; "
+                  f"r_acc: {results['r_acc']:.4f}; f_acc: {results['f_acc']:.4f}")
+    
+            # Save per-class result
+            result_to_save = results.copy()
+            result_to_save['dataset'] = val
+            if isinstance(result_to_save['confusion_matrix'], np.ndarray):
+                result_to_save['confusion_matrix'] = result_to_save['confusion_matrix'].tolist()
+            all_results.append(result_to_save)
+    
+            # Log to Comet
+            if experiment is not None:
+                for k, v in results.items():
+                    if isinstance(v, (float, int)):
+                        experiment.log_metric(f"test/{val}/{k}", v, step=step, epoch=epoch)
+    
+        # Compute mean over all classes
+        mean_metrics = {}
+        keys = ['acc', 'ap', 'r_acc', 'f_acc', 'precision', 'recall', 'f1', 'auc']
+        for key in keys:
+            values = [res[key] for res in all_results if key in res]
+            mean_metrics[key] = np.mean(values)
+    
+        print(f"(Mean         ) acc: {mean_metrics['acc']*100:.4f}; ap: {mean_metrics['ap']*100:.4f}")
+        print('*' * 25)
         print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
-     
-        # Log the mean values
-        mean_acc = np.array(accs).mean() * 100
-        mean_ap = np.array(aps).mean() * 100
+    
+        # Save all results to JSON
+        with open(f'results_epoch_{epoch or "final"}.json', 'w') as f:
+            json.dump(all_results, f, indent=4)
+    
+        # Log mean metrics to Comet
+        if experiment is not None:
+            for k, v in mean_metrics.items():
+                experiment.log_metric(f"test/mean_{k}", v, step=step, epoch=epoch)
+    
+        return all_results    
 
-        log_metric("test/acc", mean_acc, step=step, epoch=epoch)
-        log_metric("test/ap", mean_ap, step=step, epoch=epoch)
+    # def testmodel(step=None, epoch=None):
+    #     global experiment  # Declare that we are using the global 'experiment'
+    #     print('*'*25);accs = [];aps = []
+    #     print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+    #     for v_id, val in enumerate(vals):
+    #         Testopt.dataroot = '{}/{}'.format(Testdataroot, val)
+    #         Testopt.classes = os.listdir(Testopt.dataroot) if multiclass[v_id] else ['']
+    #         Testopt.no_resize = False
+    #         Testopt.no_crop = False
+    #         acc, ap, r_acc, f_acc, _, _ = validate(model.model, Testopt)
+    #         accs.append(acc);aps.append(ap)
+    #         print("({} {:12}) acc: {:.4f}; ap: {:.4f}; r_acc: {:.4f}; f_acc: {:.4f}".format(v_id, val, acc*100, ap*100, r_acc, f_acc))
+        
+    #         # Log the metrics for Comet
+    #         #experiment.log_metric(f"test/acc_{val}", acc * 100)
+    #         #experiment.log_metric(f"test/ap_{val}", ap * 100)
+    #         #experiment.log_metric(f"test/r_acc_{val}", r_acc)
+    #         #experiment.log_metric(f"test/f_acc_{val}", f_acc)
+        
+    #     print("({} {:10}) acc: {:.4f}; ap: {:.4f}".format(v_id+1,'Mean', np.array(accs).mean()*100, np.array(aps).mean()*100));print('*'*25) 
+    #     print(time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+     
+    #     # Log the mean values
+    #     mean_acc = np.array(accs).mean() * 100
+    #     mean_ap = np.array(aps).mean() * 100
+
+    #     log_metric("test/acc", mean_acc, step=step, epoch=epoch)
+    #     log_metric("test/ap", mean_ap, step=step, epoch=epoch)
 
         
     # Run for the first time to test the code for any errors

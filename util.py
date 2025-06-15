@@ -2,6 +2,16 @@ import sys
 import os
 import torch
 
+import shutil
+
+def delete_dot_folders(root_path="."):
+    for root, dirs, files in os.walk(root_path, topdown=False):
+        for d in dirs:
+            if d.startswith("."):
+                folder_path = os.path.join(root, d)
+                print(f"Deleting: {folder_path}")
+                shutil.rmtree(folder_path, ignore_errors=True)
+
 
 def mkdirs(paths):
     if isinstance(paths, list) and not isinstance(paths, str):

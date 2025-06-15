@@ -51,8 +51,8 @@ def ADOF(input_tensor):
 
     # Gradient kernels
     kernel_x = torch.tensor([[0, 0, 0], 
-                             [0, 1, -1], 
-                             [0, 0, 0]], dtype=torch.float32, device=device).reshape(1, 1, 3, 3)
+                              [0, 1, -1], 
+                              [0, 0, 0]], dtype=torch.float32, device=device).reshape(1, 1, 3, 3)
     kernel_y = kernel_x.transpose(2, 3)
 
     # Expand kernels to match number of channels

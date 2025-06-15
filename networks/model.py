@@ -63,8 +63,8 @@ def ADOF(input_tensor):
 
     # Gradient kernels
     kernel_x = torch.tensor([[0, 0, 0], 
-                             [0, 1, -1], 
-                             [0, 0, 0]], dtype=torch.float32, device=device).reshape(1, 1, 3, 3)
+                              [0, 1, -1], 
+                              [0, 0, 0]], dtype=torch.float32, device=device).reshape(1, 1, 3, 3)
     kernel_y = kernel_x.transpose(2, 3)
 
     # Expand kernels to match number of channels
@@ -82,7 +82,6 @@ def ADOF(input_tensor):
     normalized = (direction + torch.pi) / (2 * torch.pi)
 
     return normalized
-
 
 def ADOF_diff(input_tensor):
     device = input_tensor.device
@@ -246,7 +245,7 @@ if __name__  == '__main__':
     model = build_model(backbone=backbone, pretrained=False, num_classes=1, freeze_exclude=None)
     model.preprocess(torch.rand(2,3,224,224)).shape
     print(model(torch.rand(2,3,224,224)))
-    
+  
 # =============================================================================
 #     
 #     img = Image.open(r"C:\Users\danhv\Downloads\ffhq_real.png")
