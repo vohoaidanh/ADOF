@@ -205,9 +205,42 @@ This repository borrows partially from [NPR-DeepfakeDetection](https://github.co
 
 ---
 
+## License
+
+This work is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.  
+You may use, share, and adapt this code **for non-commercial research and academic purposes only**. Commercial use is strictly prohibited.
+
+🔗 [CC BY-NC 4.0 Legal Code](https://creativecommons.org/licenses/by-nc/4.0/)
+
+---
+
+## Citation
+If you use this code or its concepts in your research, please cite the following publication:
+
+**Minimalist Preprocessing Approach for Image Synthesis Detection**  
+Hoai-Danh Vo, Trung-Nghia Le  
+*Information and Communication Technology (SOICT 2024), Communications in Computer and Information Science, vol 2350, Springer, Singapore, 2025.*  
+[https://link.springer.com/chapter/10.1007/978-981-96-4282-3_8](https://link.springer.com/chapter/10.1007/978-981-96-4282-3_8)
+
+```bibtex
+@inproceedings{Vo2025MinimalistPA,
+  author={Vo, Hoai-Danh and Le, Trung-Nghia},
+  booktitle={Information and Communication Technology},
+  doi={10.1007/978-981-96-4282-3_8},
+  editor={Buntine, Wray and Fjeld, Morten and Tran, Truyen and Tran, Minh-Triet and Huynh Thi Thanh, Binh and Miyoshi, Takumi},
+  isbn={978-981-96-4281-6},
+  pages={88-99},
+  publisher={Springer Nature Singapore},
+  title={Minimalist Preprocessing Approach for Image Synthesis Detection},
+  year={2025}
+}
+```
+
+---
+
 ## Related Publication
 
-This project is described in the following peer-reviewed publication:
+This section provides additional details about the academic paper that describes the core methodology of this project.
 
 **Minimalist Preprocessing Approach for Image Synthesis Detection**  
 Hoai-Danh Vo, Trung-Nghia Le  
@@ -217,6 +250,6 @@ Hoai-Danh Vo, Trung-Nghia Le
 **Abstract:**
 > Generative models have significantly advanced image generation, resulting in synthesized images that are increasingly indistinguishable from authentic ones. However, the creation of fake images with malicious intent is a growing concern. In this paper, we introduce a simple yet efficient method that captures pixel fluctuations between neighboring pixels by calculating the gradient, which highlights variations in grayscale intensity. This approach functions as a high-pass filter, emphasizing key features for accurate image distinction while minimizing color influence. Our experiments on multiple datasets demonstrate that our method achieves accuracy levels comparable to state-of-the-art techniques while requiring minimal computational resources. Therefore, it is suitable for deployment on low-end devices such as smartphones.
 
-**Citation:**
-> Vo, HD., Le, TN. (2025). Minimalist Preprocessing Approach for Image Synthesis Detection. In: Buntine, W., Fjeld, M., Tran, T., Tran, MT., Huynh Thi Thanh, B., Miyoshi, T. (eds) Information and Communication Technology. SOICT 2024. Communications in Computer and Information Science, vol 2350. Springer, Singapore. https://doi.org/10.1007/978-981-96-4282-3_8
+**Experimental Results:**
+> The proposed method was evaluated on several public datasets for image synthesis detection. It achieved accuracy comparable to state-of-the-art deep learning approaches, while requiring significantly less computational resources. This makes the method especially suitable for deployment on low-end devices such as smartphones and embedded systems. The results confirm the effectiveness and efficiency of the minimalist preprocessing approach for real-world applications.
 
