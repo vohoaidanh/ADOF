@@ -107,8 +107,6 @@ python train.py \
 
 **Other useful options:**
 - `--num_thread 2` (number of data loading threads)
-- `--blur_prob 0 --blur_sig 0.0,0.5` (data augmentation)
-- `--jpg_prob 0 --jpg_qual 75,100` (JPEG compression augmentation)
 
 See `options/base_options.py` and `options/train_options.py` for all available arguments.
 
