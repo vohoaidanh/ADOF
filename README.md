@@ -7,7 +7,14 @@
 
 ## Overview
 
-ADOF is a deep learning framework for detecting AI-generated (synthetic) images. It supports training and evaluation on multiple datasets and provides tools for benchmarking and reproducibility.
+This repository provides the implementation of a lightweight and effective deep learning-based method for detecting AI-generated images. The work focuses on distinguishing real images from synthetic ones produced by advanced generative models such as **GANs** and **Diffusion Models**.
+
+To enhance detection accuracy, the proposed approach introduces a custom-designed spatial high-pass filter called **ADOF**, which emphasizes subtle frequency artifacts often left behind by generative models. This preprocessing step improves the sensitivity of the model while reducing its dependency on high computational resources.
+
+Our pipeline consists of:
+- A spatial-domain high-pass filtering module (**ADOF**),
+- A compact deep convolutional neural network (CNN) for binary classification,
+- Training and evaluation scripts on curated datasets combining real and generated images.
 
 ---
 
