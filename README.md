@@ -214,8 +214,10 @@ This repository borrows partially from [NPR-DeepfakeDetection](https://github.co
 
 ## License
 
-This work is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.  
-You may use, share, and adapt this code **for non-commercial research and academic purposes only**. Commercial use is strictly prohibited.
+**ADOF** is published under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** License.
+
+You may use, share, and adapt this work **for non-commercial research and academic purposes only**.  
+**Commercial use is strictly prohibited.**
 
 🔗 [CC BY-NC 4.0 Legal Code](https://creativecommons.org/licenses/by-nc/4.0/)
 
