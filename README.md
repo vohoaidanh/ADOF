@@ -235,6 +235,7 @@ Hoai-Danh Vo, Trung-Nghia Le
   year={2025}
 }
 ```
+[Download BibTeX file](https://citation-needed.springer.com/v2/references/10.1007/978-981-96-4282-3_8?format=bibtex&flavour=citation)
 
 ---
 
