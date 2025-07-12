@@ -38,54 +38,68 @@ Try the online demo: [Demo](https://fcxyzypk72sf4hiappsy7se.streamlit.app/)
    pip install gdown regex imageio opencv-python scikit-learn scikit-image ftfy natsort blobfile
    ```
 
-3. **(Optional) Use Docker or Conda for reproducibility:**
-   - Docker image: `nvcr.io/nvidia/tensorflow:21.02-tf1-py3`
-   - Conda environment: [pytorch18](https://drive.google.com/file/d/16MK7KnPebBZx5yeN6jqJ49k7VWbEYQPr/view)
 
 ---
 
 ## Dataset Preparation
 
-1. **Download datasets:**
-   - You can use the provided `download_dataset.sh` script or download datasets manually from the links in the table below.
+This project utilizes different datasets for training and evaluation. Please follow the instructions below to set up your data.
 
-   > **Note:** If any dataset link below is broken, backup links are provided in the `train_notebook.ipynb` file in this repository.
+### Training Dataset
 
-2. **Example datasets:**
+The primary training dataset is `ForenSynths`. The original download link for this dataset has expired. Therefore, a working Google Drive link for `ForenSynths_train` is provided directly within the `train_notebook.ipynb` file. Please refer to the notebook for instructions on downloading and preparing the training data.
 
-   | Dataset                | Paper/Source | Download Link |
-   |------------------------|--------------|---------------|
-   | ForenSynths (train/val/test) | [CNNDetection CVPR2020](https://github.com/PeterWang512/CNNDetection) | [Baidudrive](https://pan.baidu.com/s/1l-rXoVhoc8xJDl20Cdwy4Q?pwd=ft8b) |
-   | GANGen-Detection       | [FreqNet AAAI2024](https://github.com/chuangchuangtan/FreqNet-DeepfakeDetection) | [Google Drive](https://drive.google.com/drive/folders/11E0Knf9J1qlv2UuTnJSOFUjIIi90czSj?usp=sharing) |
-   | DiffusionForensics     | [DIRE ICCV2023](https://github.com/ZhendongWang6/DIRE) | [Google Drive](https://drive.google.com/drive/folders/1jZE4hg6SxRvKaPYO_yyMeJN_DOcqGMEf?usp=sharing) |
-   | UniversalFakeDetect    | [UniversalFakeDetect CVPR2023](https://github.com/Yuheng-Li/UniversalFakeDetect) | [Google Drive](https://drive.google.com/drive/folders/1nkCXClC7kFM01_fqmLrVNtnOYEFPtWO-?usp=sharing) |
-   | Diffusion1kStep        | -            | [Google Drive](https://drive.google.com/drive/folders/14f0vApTLiukiPvIHukHDzLujrvJpDpRq?usp=sharing) |
+### Evaluation Datasets
 
-3. **Unzip and organize datasets** as shown below:
+For evaluating the model, the following datasets are used. You can download and prepare them using the `download_dataset.sh` script.
 
-   ```
-   datasets/
-   └── ForenSynths_train/
-       ├── train/
-       │   ├── car/
-       │   ├── cat/
-       │   ├── chair/
-       │   └── horse/
-       ├── val/
-       │   ├── car/
-       │   ├── cat/
-       │   ├── chair/
-       │   └── horse/
-       └── test/
-           ├── biggan/
-           ├── cyclegan/
-           ├── deepfake/
-           ├── gaugan/
-           ├── progan/
-           ├── stargan/
-           ├── stylegan/
-           └── stylegan2/
-   ```
+**Automated Download:**
+To automatically download and prepare all necessary **evaluation** datasets, run the `download_dataset.sh` script:
+
+```sh
+chmod +x download_dataset.sh
+./download_dataset.sh
+```
+
+This script will download datasets like UniversalFakeDetect, GANGen-Detection, DiffusionForensics, AIGCDetect_testset, Diffusion1kStep, and CNN_synth_testset, and organize them into the `dataset` directory.
+
+**Manual Download Links (for reference):**
+
+| Dataset                | Paper/Source | Download Link |
+|------------------------|--------------|---------------|
+| ForenSynths (train/val/test) | [CNNDetection CVPR2020](https://github.com/PeterWang512/CNNDetection) | [Baidudrive](https://pan.baidu.com/s/1l-rXoVhoc8xJDl20Cdwy4Q?pwd=ft8b) |
+| GANGen-Detection       | [FreqNet AAAI2024](https://github.com/chuangchuangtan/FreqNet-DeepfakeDetection) | [Google Drive](https://drive.google.com/drive/folders/11E0Knf9J1qlv2UuTnJSOFUjIIi90czSj?usp=sharing) |
+| DiffusionForensics     | [DIRE ICCV2023](https://github.com/ZhendongWang6/DIRE) | [Google Drive](https://drive.google.com/drive/folders/1jZE4hg6SxRvKaPYO_yyMeJN_DOcqGMEf?usp=sharing) |
+| UniversalFakeDetect    | [UniversalFakeDetect CVPR2023](https://github.com/Yuheng-Li/UniversalFakeDetect) | [Google Drive](https://drive.google.com/drive/folders/1nkCXClC7kFM01_fqmLrVNtnOYEFPtWO-?usp=sharing) |
+| Diffusion1kStep        | -            | [Google Drive](https://drive.google.com/drive/folders/14f0vApTLiukiPvIHukHDzLujrvJpDpRq?usp=sharing) |
+
+### Directory Structure
+
+Organize your datasets as shown below for the project to correctly locate them:
+
+```
+datasets/
+└── ForenSynths_train/
+    ├── train/
+    │   ├── car/
+    │   ├── cat/
+    │   ├── chair/
+    │   └── horse/
+    ├── val/
+    │   ├── car/
+    │   ├── cat/
+    │   ├── chair/
+    │   └── horse/
+    └── test/
+        ├── biggan/
+        ├── cyclegan/
+        ├── deepfake/
+        ├── gaugan/
+        ├── progan/
+        ├── stargan/
+        ├── stylegan/
+        └── stylegan2/
+```
 
 ---
 
@@ -122,7 +136,8 @@ python test.py \
   --batch_size 32
 ```
 
-- You may need to update the test set directory in `test.py` or pass `--dataroot` if supported.
+- You may need to update the test set directory in `test.py` 
+
 - For best results on AIGCDetectBenchmark, set `--no_resize` and `--no_crop` to `True`, and use `--batch_size 1`.
 
 ---
