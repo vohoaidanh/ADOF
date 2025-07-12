@@ -154,17 +154,7 @@ ADOF was extensively evaluated on public benchmarks and compared with state-of-t
 | Ojha          | 78.4     | 92.1     | 72.9      | 78.8      | 75.0       | 92.8       | 82.2     | 97.1     | 75.3      | 92.5      | 83.5              | 97.7              | 56.4                 | 90.4                 | 71.5                 | 92.4                 | 74.4     | 91.7     |
 | NPR           | 88.6     | 98.9     | 99.8      | 100.0     | 91.8       | 99.8       | 100.0    | 100.0    | 91.2      | 100.0     | 100.0             | 100.0             | 97.4                 | 99.8                 | 93.8                 | 100.0                | 95.3     | 99.8     |
 | **ADOF(ours)**| **93.5** | **99.0** | 99.6      | **100.0** | **99.2**   | **100.0**  | 99.9     | **100.0**| **97.4**  | 99.9      | 97.1              | 99.8              | **99.8**             | **100.0**            | **99.9**             | **100.0**            | **98.3** | **99.8** |
-
-### Model Size, Speed, and Efficiency Comparison (DiffusionForensics)
-
-The table below compares the number of parameters, processing time, inference time, FLOPs, and mean accuracy/average precision (acc/ap) of ADOF and other methods on the DiffusionForensics dataset. ADOF achieves state-of-the-art performance with a much smaller and faster model.
-
-| Method                | Parameters         | Processing (ms) | Inference Time (ms) | FLOPs              | Means (acc/ap) |
-|-----------------------|-------------------|-----------------|---------------------|--------------------|----------------|
-| LGrad                 | 25.56 × 10⁶       | 11.6            | 4.81                | 4.12 × 10⁹         | 88.2 / 98.5    |
-| DIRE†                 | 25.56 × 10⁶       | 4,502.7         | 4.81                | 4.12 × 10⁹         | 97.9 / **100** |
-| Ojha                  | 427.62 × 10⁶      | None            | 29.19               | 77.83 × 10⁹        | 74.4 / 91.7    |
-| **ADOF (ours)**       | **1.44 × 10⁶**    | **0.40**        | **2.43**            | **1.74 × 10⁹**     | **98.3 / 99.8**|
+ 
 
 ### Ojha Dataset Results
 
@@ -182,6 +172,19 @@ The table below compares the number of parameters, processing time, inference ti
 | NPR           | 94.5      | **99.5**   | 98.2               | 99.8               | 97.8               | 99.7               | 98.2              | 99.8              | 75.8     | 81.0     | **99.3**     | 99.9         | **99.1**     | 99.9         | **99.0**          | 99.8              | **95.2** | 97.4     |
 | RINE          | **95.0**  | 99.5       | 90.7               | 99.2               | 88.9               | 99.1               | 92.6              | 99.5              | 76.1     | 96.6     | 98.7         | 99.9         | 98.3         | 99.9         | 88.2              | 98.7              | 91.1     | 99.0     |
 | **ADOF(ours)**| 92.1      | 98.3       | **98.6**           | **100.0**          | **98.7**           | **100.0**          | **98.4**          | **99.9**          | 75.9     | 87.6     | 98.8         | **100.0**    | 98.6         | **99.9**     | 98.5              | **99.9**          | 94.9     | **98.2** |
+
+
+
+### Model Size, Speed, and Efficiency Comparison (DiffusionForensics)
+
+The table below compares the number of parameters, processing time, inference time, FLOPs, and mean accuracy/average precision (acc/ap) of ADOF and other methods on the DiffusionForensics dataset. ADOF achieves state-of-the-art performance with a much smaller and faster model.
+
+| Method                | Parameters         | Processing (ms) | Inference Time (ms) | FLOPs              | Means (acc/ap) |
+|-----------------------|-------------------|-----------------|---------------------|--------------------|----------------|
+| LGrad                 | 25.56 × 10⁶       | 11.6            | 4.81                | 4.12 × 10⁹         | 88.2 / 98.5    |
+| DIRE†                 | 25.56 × 10⁶       | 4,502.7         | 4.81                | 4.12 × 10⁹         | 97.9 / **100** |
+| Ojha                  | 427.62 × 10⁶      | None            | 29.19               | 77.83 × 10⁹        | 74.4 / 91.7    |
+| **ADOF (ours)**       | **1.44 × 10⁶**    | **0.40**        | **2.43**            | **1.74 × 10⁹**     | **98.3 / 99.8**|
 
 ## Acknowledgments
 
